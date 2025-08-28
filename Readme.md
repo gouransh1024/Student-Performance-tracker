@@ -3,7 +3,7 @@
 
 ## 🚀 Live Demo
 
-**[🌐 Access the Application](https://student-performance-tracker-application.streamlit.app/)**
+**[🌐 Access the Application](https://student-performance-tracker-6udhqq7mgovrhprentoxvt.streamlit.app/)**
 
 ## 📋 Table of Contents
 
@@ -377,4 +377,5 @@ If you find this project helpful, please consider:
 *Empowering education through data-driven insights* 📚✨
 
 </div>
+
 
