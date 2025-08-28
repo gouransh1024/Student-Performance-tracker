@@ -283,7 +283,7 @@ We welcome contributions to improve the Student Performance Tracker! Here's how 
 
 1. **Fork the Repository**
 ```bash
-git fork https://github.com/Its-Kratik/student-performance-tracker.git
+git fork https://github.com/gouransh1024/Student-Performance-tracker.git
 ```
 
 2. **Create a Feature Branch**
@@ -323,12 +323,12 @@ git push origin feature/amazing-feature
 
 ## 🙋♂️ Contact
 
-**Kratik Jain** - *Full Stack Developer & Data Enthusiast*
+**Gouransh Soni** - *Full Stack Developer & Data Enthusiast*
 
-- 📧 **Email**: [kratikjain121@gmail.com](mailto:kratikjain121@gmail.com)
-- 📱 **Phone**: [+91 7410990404](tel:+917410990404)
-- 💼 **LinkedIn**: [kratik-jain12](https://www.linkedin.com/in/kratik-jain12/)
-- 🔗 **GitHub**: [Its-Kratik](https://github.com/Its-Kratik)
+- 📧 **Email**: [gouransh1024@gmail.com](mail to:gouransh1024@gmail.com)
+- 📱 **Phone**: [+91 9509682181](tel:+919509682181)
+- 💼 **LinkedIn**: [Gouransh SOni](https://www.linkedin.com/in/gouransh-soni-3556192b1)
+- 🔗 **GitHub**: [gouransh1024](https://github.com/gouransh1024)
 - 🌐 **Live App**: [Student Performance Tracker](https://student-performance-tracker.streamlit.app/)
 
 ## 🙏 Acknowledgments
@@ -372,7 +372,7 @@ If you find this project helpful, please consider:
 
 <div align="center">
 
-**Built with ❤️ by [Kratik Jain](https://github.com/Its-Kratik)**
+**Built with ❤️ by [Gouransh Soni](https://github.com/gouransh1024)**
 
 *Empowering education through data-driven insights* 📚✨
 
