@@ -105,7 +105,7 @@ The **Student Performance Tracker** is a full-stack web application designed to 
 
 1. **Clone the Repository**
 ```bash
-git clone https://github.com/Its-Kratik/student-performance-tracker.git
+git clone https://github.com/gouransh1024/Student-Performance-tracker.git
 cd student-performance-tracker
 ```
 
