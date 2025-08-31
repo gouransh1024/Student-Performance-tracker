@@ -54,6 +54,13 @@ The **Student Performance Tracker** is a full-stack web application designed to 
 - Maximum marks customization (default: 100)
 - Input validation to prevent invalid data entry
 
+### 📥 **Bulk Data Import**
+- Excel and CSV file import for students, subjects, and marks
+- Comprehensive data validation with detailed error reporting
+- Sample file templates for easy data preparation
+- Batch processing for large datasets
+- Import statistics and success rate tracking
+
 ### 📋 **Performance Analytics & Reporting**
 - Individual student report cards with detailed breakdowns
 - Class-wise performance analytics with comparative metrics
@@ -145,6 +152,7 @@ python install.py  # For Python 3.13 compatibility
 - **Entering Marks**: Go to "Enter Marks" → Select student and subject → Input scores
 - **Viewing Analytics**: Access "Class Analytics" → Select class/section → View insights
 - **Exporting Data**: Use export buttons in any section → Download CSV files
+- **Bulk Import**: Go to "Bulk Data Import" → Upload Excel/CSV files for students, subjects, or marks
 
 ## 📁 Project Structure
 
@@ -158,7 +166,8 @@ student-performance-tracker/
 │   ├── 4_Student_Report_Card.py # Individual report generation
 │   ├── 5_Class_Analytics.py     # Class performance analytics
 │   ├── 6_Visual_Reports.py      # Interactive visual dashboards
-│   └── 7_Settings.py            # Application configuration
+│   ├── 7_Settings.py            # Application configuration
+│   └── 8_Bulk_Data_Import.py    # Bulk data import functionality
 ├── 📂 models/                   # Data models and business logic
 │   ├── student.py               # Student model and operations
 │   ├── subject.py               # Subject model and operations
@@ -166,7 +175,8 @@ student-performance-tracker/
 ├── 📂 db/                       # Database layer
 │   └── connection.py            # SQLite connection and utilities
 ├── 📂 utils/                    # Utility functions
-│   └── analytics.py             # Advanced analytics functions
+│   ├── analytics.py             # Advanced analytics functions
+│   └── data_import.py           # Data import utilities
 ├── 📂 tests/                    # Test suite
 │   └── test_cases.py            # Unit and integration tests
 ├── 📄 requirements.txt          # Python dependencies
@@ -338,6 +348,33 @@ git push origin feature/amazing-feature
 - **[Pandas](https://pandas.pydata.org/)** for powerful data manipulation
 - **[Plotly](https://plotly.com/)** for interactive visualizations
 - **Open Source Community** for inspiration and support
+
+## 📥 Bulk Data Import Feature
+
+The application now includes a comprehensive bulk data import system that allows you to import large amounts of data from Excel and CSV files.
+
+### **Supported Import Types**
+- **Students**: Import student information (name, class, section, date of birth)
+- **Subjects**: Import subject names for the curriculum
+- **Marks**: Import student marks with assessment details
+
+### **Key Features**
+- ✅ **File Format Support**: CSV and Excel (.xlsx, .xls) files
+- ✅ **Data Validation**: Comprehensive validation with detailed error reporting
+- ✅ **Sample Templates**: Download sample files for easy data preparation
+- ✅ **Batch Processing**: Handle large datasets efficiently
+- ✅ **Import Statistics**: Track success rates and error details
+- ✅ **Error Handling**: Detailed error messages for troubleshooting
+
+### **Quick Start**
+1. Navigate to "Bulk Data Import" page
+2. Choose the data type (Students, Subjects, or Marks)
+3. Download sample files as templates
+4. Prepare your data following the format requirements
+5. Upload and validate your file
+6. Import the data and review results
+
+For detailed instructions, see the [Bulk Import Guide](BULK_IMPORT_GUIDE.md).
 
 ## 🔮 Future Roadmap
 

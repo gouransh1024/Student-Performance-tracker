@@ -11,7 +11,11 @@ import sys
 import os
 
 # Add parent directory to path for imports
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+try:
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+except NameError:
+    # When running as script, add current directory
+    sys.path.append('.')
 
 from models.student import Student
 from models.subject import Subject
@@ -20,11 +24,11 @@ from utils.analytics import PerformanceAnalytics
 
 st.set_page_config(
     page_title="Visual Reports",
-    page_icon="📈",
+    page_icon=":chart_with_upwards_trend:",
     layout="wide"
 )
 
-st.title("📈 Visual Reports & Analytics")
+st.title("Visual Reports & Analytics")
 st.markdown("Interactive charts and visualizations for performance analysis")
 
 # Check if data exists
@@ -32,7 +36,7 @@ students = Student.get_all_students()
 marks = Marks.get_all_marks()
 
 if not students or not marks:
-    st.warning("⚠️ Insufficient data for visualization. Please add students and marks first.")
+    st.warning("Insufficient data for visualization. Please add students and marks first.")
     col1, col2 = st.columns(2)
     with col1:
         if st.button("Go to Manage Students"):
@@ -86,7 +90,7 @@ with st.sidebar:
 
 # Main content area
 if chart_type == "Grade Distribution":
-    st.subheader("📊 Grade Distribution Analysis")
+    st.subheader("Grade Distribution Analysis")
 
     try:
         # Get grade distribution data
@@ -140,7 +144,7 @@ if chart_type == "Grade Distribution":
                     st.plotly_chart(fig_bar, use_container_width=True)
 
                 # Summary statistics
-                st.markdown("### 📋 Grade Summary")
+                st.markdown("### Grade Summary")
 
                 col1, col2, col3, col4 = st.columns(4)
 
