@@ -1,217 +1,148 @@
+<div align="center">
+
 # 🎓 Student Performance Tracker
-> **A comprehensive web-based academic management system built with Streamlit and SQLite for tracking student performance, generating analytics, and managing educational data.**
+### *Enterprise Academic Intelligence & Student Analytics Suite*
 
-## 🚀 Live Demo
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-3776AB.svg?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B.svg?style=for-the-badge&logo=Streamlit&logoColor=white)](https://streamlit.io/)
+[![SQLite](https://img.shields.io/badge/SQLite-003B57.svg?style=for-the-badge&logo=sqlite&logoColor=white)](https://www.sqlite.org/)
+[![Plotly](https://img.shields.io/badge/Plotly-3F4F75.svg?style=for-the-badge&logo=plotly&logoColor=white)](https://plotly.com/)
+[![Tests](https://img.shields.io/badge/Tests-18%2F18%20Passing-22C55E.svg?style=for-the-badge&logo=checkmarx&logoColor=white)](tests/test_cases.py)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 
-**[🌐 Access the Application](https://student-performance-tracker-application.streamlit.app/)**
+A robust, modern, and comprehensive academic performance management system engineered with **Streamlit**, **SQLite**, and **Plotly**. Features real-time institutional analytics, dual grading scales (4.0 GPA & 10.0 UGC/CBSE), attendance correlation engines, ReportLab PDF report cards, and a dual-theme UI engine with high-contrast accessibility.
+
+[🌐 Explore Application](https://github.com/gouransh1024/Student-Performance-tracker) • [📖 Documentation](#-table-of-contents) • [⚡ Quick Start](#-quick-start) • [🧪 Run Tests](#-test-suite)
+
+</div>
+
+---
 
 ## 📋 Table of Contents
 
-- [Overview](#overview)
-- [Features](#features)
-- [Tech Stack](#tech-stack)
-- [Installation](#installation)
-- [Usage Guide](#usage-guide)
-- [Project Structure](#project-structure)
-- [Technical Implementation](#technical-implementation)
-- [Screenshots](#screenshots)
-- [Contributing](#contributing)
-- [License](#license)
-- [Contact](#contact)
+- [Overview](#-overview)
+- [Key Highlights](#-key-highlights)
+- [Core Features](#-core-features)
+  - [1. Student Directory & Profile Management](#1-student-directory--profile-management)
+  - [2. Curriculum & Subject Architecture](#2-curriculum--subject-architecture)
+  - [3. Assessment & Multi-Scale Grading](#3-assessment--multi-scale-grading)
+  - [4. Attendance Tracking & Correlation Engine](#4-attendance-tracking--correlation-engine)
+  - [5. Official Report Cards & PDF Generation](#5-official-report-cards--pdf-generation)
+  - [6. Class-Level & Cohort Visual Analytics](#6-class-level--cohort-visual-analytics)
+  - [7. Bulk Data Ingestion Engine](#7-bulk-data-ingestion-engine)
+  - [8. System Administration & Sample Generator](#8-system-administration--sample-generator)
+- [Design & Dual Theme Engine](#-design--dual-theme-engine)
+- [Technical Architecture & Database Schema](#-technical-architecture--database-schema)
+- [Grading Engine Standards](#-grading-engine-standards)
+- [Installation & Setup](#-installation--setup)
+- [Test Suite](#-test-suite)
+- [Project Directory Structure](#-project-directory-structure)
+- [Screenshots & Visuals](#-screenshots--visuals)
+- [Contributing](#-contributing)
+- [Author & Contact](#-author--contact)
+
+---
 
 ## 🎯 Overview
 
-The **Student Performance Tracker** is a full-stack web application designed to streamline academic performance management for educational institutions. Built with modern web technologies, it provides real-time analytics, automated grade calculations, and comprehensive reporting capabilities.
+The **Student Performance Tracker** is designed for high schools, colleges, and educational administrators seeking a lightweight, zero-latency desktop and cloud-ready analytics workstation. Built with modern web standards, it handles student rosters, marks entries, assessment breakdowns, attendance logging, and cohort-level trends without cumbersome cloud setups or recurring subscription tiers.
 
-### 🎨 Key Highlights
+### 🌟 Key Highlights
 
-- **📊 Real-time Analytics**: Live performance dashboards with interactive visualizations
-- **🎯 Automated Grading**: Intelligent grade calculation system (A+ to F)
-- **📱 Responsive Design**: Cross-platform compatibility with modern UI/UX
-- **⚡ SQLite Database**: Lightweight, portable database with optimized queries
-- **🛡️ Data Validation**: Comprehensive input validation and error handling
-- **📤 Export Capabilities**: CSV export for all data types
+- **🌓 Dual Theme Experience**: Native toggle between **Obsidian Slate Dark Mode** and **Pearl Academic Light Mode** with strict WCAG contrast compliance and sidebar glyph protection.
+- **📈 Attendance & Academic Correlation**: Interactive Pearson correlation engine visualizing how attendance directly influences student assessment scores.
+- **📄 Instant PDF Transcript Generation**: Downloadable formal student report cards powered by ReportLab with subject matrices, GPA conversions, and faculty signature sections.
+- **⚖️ Dual GPA Calculation Engine**: Simultaneous calculation of 4.0 US Collegiate GPA and 10.0 UGC/CBSE Scale alongside traditional percentage grades (A+ to F).
+- **🛡️ Enterprise Integrity**: SQLite schema enforced with `PRAGMA foreign_keys = ON;`, cascading deletions (`Attendance -> Marks -> Student -> Subject`), and atomic transactions.
+- **⚡ Pre-Engineered Sample Datasets**: One-click reset and generation of 10 students across classes 10, 11, and 12 with 150+ assessment records and 20 school days of attendance history.
 
-## ✨ Features
+---
 
-### 👥 **Student Management System**
-- Complete CRUD operations with search and filtering
-- Class and section-based organization (10A, 10B, 11A, etc.)
-- Student profile management with date of birth tracking
-- Bulk data export functionality
-- Advanced search with multiple criteria
+## ✨ Core Features
 
-### 📚 **Subject Management**
-- Dynamic subject creation and organization
-- Quick-add functionality for common subjects
-- Subject-wise performance tracking
-- Unique subject validation to prevent duplicates
+### 1. Student Directory & Profile Management
+- Complete CRUD operations with live search, class filtering (10, 11, 12), and section filtering (A, B, C).
+- Roll number indexing (`10A-01`, `11A-01`, etc.), contact details, date of birth, and enrollment timestamps.
+- Live export of student records to CSV with single-click actions.
 
-### 📝 **Assessment & Marks Management**
-- Flexible marks entry with multiple assessment types (Quiz, Assignment, Midterm, Final)
-- Real-time percentage calculation and grade assignment
-- Assessment date tracking and validation
-- Maximum marks customization (default: 100)
-- Input validation to prevent invalid data entry
+### 2. Curriculum & Subject Architecture
+- Dynamic curriculum builder with duplicate-prevention validation.
+- Preset subject libraries (Mathematics, Physics, Chemistry, English, Computer Science, Biology, etc.).
+- Real-time subject-wise statistics: enrolled student count, average assessment scores, and passing ratios.
 
-### 📥 **Bulk Data Import**
-- Excel and CSV file import for students, subjects, and marks
-- Comprehensive data validation with detailed error reporting
-- Sample file templates for easy data preparation
-- Batch processing for large datasets
-- Import statistics and success rate tracking
+### 3. Assessment & Multi-Scale Grading
+- Support for varied assessment categories: **Assignment, Quiz, Midterm, Final, Project**.
+- Real-time score validation preventing marks greater than maximum values.
+- Automated instant letter grading (`A+`, `A`, `B+`, `B`, `C+`, `C`, `F`) and percentage calculations.
 
-### 📋 **Performance Analytics & Reporting**
-- Individual student report cards with detailed breakdowns
-- Class-wise performance analytics with comparative metrics
-- Subject-wise performance analysis and trends
-- Grade distribution analysis across classes
-- Pass/fail rate tracking with visual indicators
-- Top performers identification and ranking
+### 4. Attendance Tracking & Correlation Engine
+- Daily roll-call logging: **Present**, **Late**, **Excused**, and **Absent**.
+- Date-range attendance analytics with individual attendance rate KPIs.
+- **Academic Correlation Plot**: Scatter analysis with linear regression trendlines indicating whether student attendance rates correlate directly with examination outcomes.
 
-### 📊 **Interactive Visualizations**
-- Grade distribution pie charts and bar graphs
-- Class performance comparison charts
-- Subject performance analysis with range visualization
-- Performance trends over time
-- Pass/fail analysis with risk assessment
-- Top performers leaderboard with ranking
+### 5. Official Report Cards & PDF Generation
+- Comprehensive student report card view complete with academic GPA, total marks, percentage, and attendance summary.
+- **ReportLab PDF Exporter**: Generates clean, printable PDF report cards ready for distribution to students, guardians, and academic counselors.
 
-### ⚙️ **System Administration**
-- Database management and monitoring
-- Sample data generation for testing
-- Data backup and export functionality
-- Application settings and preferences
-- System statistics and health monitoring
+### 6. Class-Level & Cohort Visual Analytics
+- Class-wide and section-wide performance comparison charts with Plotly interactive graphs.
+- Subject-wise score distribution boxplots and range visualizations.
+- Pass/Fail risk identification matrix highlighting students requiring remedial intervention.
+- Class leaderboards and top performer rankings.
 
-## 🛠️ Tech Stack
+### 7. Bulk Data Ingestion Engine
+- Bulk ingestion of Students, Subjects, and Assessment Marks via CSV or Excel (`.xlsx`, `.xls`).
+- Pre-validated schema parsing with detailed line-by-line syntax and foreign-key validation reporting.
+- Ready-to-use downloadable sample CSV templates.
 
-### **Frontend & Web Framework**
-- **[Streamlit](https://streamlit.io/)** - Modern web app framework for rapid development
-- **[Pandas](https://pandas.pydata.org/)** - Data manipulation and analysis
-- **[Plotly](https://plotly.com/)** - Interactive data visualizations
-- **[Altair](https://altair-viz.github.io/)** - Statistical visualizations
+### 8. System Administration & Sample Generator
+- System health diagnostic counters for active students, registered subjects, and recorded assessments.
+- Institutional database cleanup with cascading deletion protection.
+- One-click sample data generation populating authentic students, marks, and attendance records.
 
-### **Backend & Database**
-- **[Python 3.8+](https://www.python.org/)** - Core programming language
-- **[SQLite](https://www.sqlite.org/)** - Lightweight, serverless database
-- **[SQLAlchemy-style queries](https://www.sqlalchemy.org/)** - Optimized database operations
+---
 
-### **Development & Deployment**
-- **Git** - Version control
-- **GitHub** - Code repository and collaboration
-- **Streamlit Cloud** - Cloud deployment platform
+## 🎨 Design & Dual Theme Engine
 
-## 🚀 Installation
+The application features a custom UI design system built in [`utils/ui_theme.py`](file:///c:/Users/goura/Downloads/Student-Performance-Tracker-application-main/utils/ui_theme.py):
 
-### **Prerequisites**
-- Python 3.8 or higher
-- Git (for cloning the repository)
+| Theme Option | Background Palette | Card Surface | Text & Headings | Primary Accent |
+| :--- | :--- | :--- | :--- | :--- |
+| **🌙 Obsidian Slate Dark** | `#0f172a` (Deep Slate) | `#1e293b` with 1px border | `#f8fafc` & `#94a3b8` | `#6366f1` (Indigo Glow) |
+| **☀️ Pearl Academic Light**| `#f8fafc` (Off-white) | `#ffffff` with subtle shadow | `#0f172a` & `#475569` | `#4f46e5` (Royal Indigo) |
 
-### **Quick Start**
+### Key UI Features:
+- **Zero White-on-White Collisions**: High-contrast calibrated sidebar navigation (`stSidebarNav`) ensuring clear legibility of page names and icons in both modes.
+- **Preserved Material Symbols**: Custom font-family locks preventing icon corruption or fallback ligature text.
+- **Glassmorphic Metric Cards**: KPI badges featuring subtle borders, glow accents, and responsive flex typography.
 
-1. **Clone the Repository**
-```bash
-git clone https://github.com/gouransh1024/Student-Performance-tracker.git
-cd student-performance-tracker
-```
+---
 
-2. **Install Dependencies**
-```bash
-pip install -r requirements.txt
-```
+## 🏗️ Technical Architecture & Database Schema
 
-3. **Run the Application**
-```bash
-streamlit run app.py
-```
+The database leverages SQLite with relational integrity constraints enforced at connection initialization:
 
-4. **Access the Application**
-- Open your browser and navigate to `http://localhost:8501`
-- The database will be automatically initialized with sample data
-
-### **Alternative Setup**
-```bash
-python install.py  # For Python 3.13 compatibility
-```
-
-## 📖 Usage Guide
-
-### **Getting Started Workflow**
-1. **🏠 Dashboard**: Overview of system statistics and quick actions
-2. **👥 Manage Students**: Add, edit, delete, and search students
-3. **📚 Manage Subjects**: Create and organize subject curriculum
-4. **📝 Enter Marks**: Input student assessments and grades
-5. **📋 Report Cards**: Generate individual student reports
-6. **📊 Class Analytics**: Analyze class and section performance
-7. **📈 Visual Reports**: Interactive charts and insights
-8. **⚙️ Settings**: Configure application preferences
-
-### **Key Operations**
-- **Adding Students**: Navigate to "Manage Students" → "Add New Student"
-- **Entering Marks**: Go to "Enter Marks" → Select student and subject → Input scores
-- **Viewing Analytics**: Access "Class Analytics" → Select class/section → View insights
-- **Exporting Data**: Use export buttons in any section → Download CSV files
-- **Bulk Import**: Go to "Bulk Data Import" → Upload Excel/CSV files for students, subjects, or marks
-
-## 📁 Project Structure
-
-```
-student-performance-tracker/
-├── 📄 app.py                    # Main application entry point
-├── 📂 pages/                    # Streamlit pages
-│   ├── 1_Manage_Students.py     # Student management interface
-│   ├── 2_Manage_Subjects.py     # Subject management interface
-│   ├── 3_Enter_Update_Marks.py  # Marks entry and updating
-│   ├── 4_Student_Report_Card.py # Individual report generation
-│   ├── 5_Class_Analytics.py     # Class performance analytics
-│   ├── 6_Visual_Reports.py      # Interactive visual dashboards
-│   ├── 7_Settings.py            # Application configuration
-│   └── 8_Bulk_Data_Import.py    # Bulk data import functionality
-├── 📂 models/                   # Data models and business logic
-│   ├── student.py               # Student model and operations
-│   ├── subject.py               # Subject model and operations
-│   └── marks.py                 # Marks model and calculations
-├── 📂 db/                       # Database layer
-│   └── connection.py            # SQLite connection and utilities
-├── 📂 utils/                    # Utility functions
-│   ├── analytics.py             # Advanced analytics functions
-│   └── data_import.py           # Data import utilities
-├── 📂 tests/                    # Test suite
-│   └── test_cases.py            # Unit and integration tests
-├── 📄 requirements.txt          # Python dependencies
-├── 📄 install.py                # Installation script
-├── 📄 README.md                 # Project documentation
-└── 📄 student_tracker.db        # SQLite database (auto-generated)
-```
-
-## 🔧 Technical Implementation
-
-### **Database Schema**
-
-#### **Student Table**
 ```sql
+-- Student Entity
 CREATE TABLE Student (
     student_id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL CHECK(length(trim(name)) >= 2),
     class TEXT NOT NULL CHECK(class IN ('10', '11', '12')),
     section TEXT NOT NULL CHECK(section IN ('A', 'B', 'C')),
     dob DATE,
+    roll_number TEXT UNIQUE,
+    email TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-)
-```
+);
 
-#### **Subject Table**
-```sql
+-- Subject Entity
 CREATE TABLE Subject (
     subject_id INTEGER PRIMARY KEY AUTOINCREMENT,
     subject_name TEXT NOT NULL UNIQUE CHECK(length(trim(subject_name)) >= 2),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-)
-```
+);
 
-#### **Marks Table**
-```sql
+-- Assessment Marks Entity
 CREATE TABLE Marks (
     mark_id INTEGER PRIMARY KEY AUTOINCREMENT,
     student_id INTEGER NOT NULL,
@@ -225,193 +156,169 @@ CREATE TABLE Marks (
     FOREIGN KEY (student_id) REFERENCES Student(student_id) ON DELETE CASCADE,
     FOREIGN KEY (subject_id) REFERENCES Subject(subject_id) ON DELETE CASCADE,
     CHECK(marks_obtained <= max_marks)
-)
+);
+
+-- Attendance Records Entity
+CREATE TABLE Attendance (
+    attendance_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    student_id INTEGER NOT NULL,
+    date DATE NOT NULL,
+    status TEXT NOT NULL CHECK(status IN ('Present', 'Absent', 'Late', 'Excused')),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (student_id) REFERENCES Student(student_id) ON DELETE CASCADE,
+    UNIQUE(student_id, date)
+);
 ```
 
-### **Grade Calculation System**
+---
 
-| Percentage Range | Grade | Description |
-| :-- | :-- | :-- |
-| 90% - 100% | A+ | Outstanding |
-| 80% - 89% | A | Excellent |
-| 70% - 79% | B+ | Very Good |
-| 60% - 69% | B | Good |
-| 50% - 59% | C+ | Above Average |
-| 40% - 49% | C | Average |
-| Below 40% | F | Fail |
+## 📊 Grading Engine Standards
 
-### **Key Algorithms**
+The grading calculation engine converts raw marks to standardized institutional scales:
 
-#### **Percentage Calculation**
-```python
-def calculate_percentage(marks_obtained: int, max_marks: int) -> float:
-    if max_marks == 0:
-        return 0.0
-    return round((marks_obtained / max_marks) * 100, 2)
+| Percentage Range | Letter Grade | 4.0 Scale GPA | 10.0 Scale Point | Academic Standing |
+| :---: | :---: | :---: | :---: | :---: |
+| **90% – 100%** | **A+** | 4.00 | 10.0 | Outstanding Honors |
+| **80% – 89%** | **A** | 3.75 | 9.0 | Excellent Standing |
+| **70% – 79%** | **B+** | 3.25 | 8.0 | Very Good |
+| **60% – 69%** | **B** | 3.00 | 7.0 | Good Standing |
+| **50% – 59%** | **C+** | 2.50 | 6.0 | Above Average |
+| **40% – 49%** | **C** | 2.00 | 5.0 | Average Pass |
+| **Below 40%** | **F** | 0.00 | 0.0 | Academic Remediation |
+
+---
+
+## 🚀 Installation & Setup
+
+### Prerequisites
+- **Python 3.8 to 3.12+** installed on your system.
+- **Git** version control tool.
+
+### Quick Start
+
+1. **Clone the Repository**
+   ```bash
+   git clone https://github.com/gouransh1024/Student-Performance-tracker.git
+   cd Student-Performance-tracker
+   ```
+
+2. **Create and Activate Virtual Environment**
+   ```bash
+   # Windows (PowerShell)
+   python -m venv venv
+   .\venv\Scripts\Activate.ps1
+
+   # macOS / Linux
+   python3 -m venv venv
+   source venv/bin/activate
+   ```
+
+3. **Install Dependencies**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **Launch the Application**
+   ```bash
+   streamlit run app.py
+   ```
+
+5. **Access the Interface**
+   - Open your browser to `http://localhost:8501`.
+   - On the first run, the SQLite database is automatically generated with ready-to-test academic records.
+
+---
+
+## 🧪 Test Suite
+
+The project includes unit test coverage for grading calculations, attendance scoring, and model workflows.
+
+To run the complete test suite:
+```bash
+python -m unittest tests/test_cases.py
 ```
 
-#### **Grade Assignment**
-```python
-def calculate_grade(percentage: float) -> str:
-    if percentage >= 90: return "A+"
-    elif percentage >= 80: return "A"
-    elif percentage >= 70: return "B+"
-    elif percentage >= 60: return "B"
-    elif percentage >= 50: return "C+"
-    elif percentage >= 40: return "C"
-    else: return "F"
+### Expected Output:
+```text
+----------------------------------------------------------------------
+Ran 18 tests in 0.812s
+
+OK
 ```
 
-### **Performance Optimizations**
-- **Database Indexing**: Optimized queries with proper indexes
-- **Connection Pooling**: Efficient database connection management
-- **Caching**: Streamlit caching for improved performance
-- **Query Optimization**: Optimized SQL queries for large datasets
+---
 
-## 📸 Screenshots
+## 📁 Project Directory Structure
 
-### **Dashboard Overview**
-<img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/6896945d-9d6d-4851-87b9-6d414d8bdf12" />
+```text
+Student-Performance-tracker/
+├── 📄 app.py                     # Primary dashboard & navigation router
+├── 📂 pages/                     # Streamlit multi-page application
+│   ├── 1_Manage_Students.py      # Student profile management & directory
+│   ├── 2_Manage_Subjects.py      # Curriculum and subject administration
+│   ├── 3_Enter_Update_Marks.py   # Assessment marks recording & updates
+│   ├── 4_Student_Report_Card.py  # Transcript view with PDF export
+│   ├── 5_Class_Analytics.py      # Class comparative analytics
+│   ├── 6_Visual_Reports.py       # Plotly distribution charts & trends
+│   ├── 7_Settings.py             # Theme settings, diagnostics & sample data
+│   ├── 8_Bulk_Data_Import.py     # CSV/Excel bulk file parser
+│   └── 9_Attendance_Tracker.py   # Attendance logging & correlation engine
+├── 📂 models/                    # Data access layer & business entities
+│   ├── student.py                # Student model & query handlers
+│   ├── subject.py                # Subject model & query handlers
+│   └── marks.py                  # Assessment calculations & marks queries
+├── 📂 db/                        # Database management layer
+│   └── connection.py             # SQLite schema, pooling & sample dataset generator
+├── 📂 utils/                     # Core utility & rendering engine
+│   ├── ui_theme.py               # Dual theme engine (Dark/Light CSS injection)
+│   ├── data_management.py        # Cascading reset, deletion & verification
+│   ├── analytics.py              # Performance calculations & statistical models
+│   └── data_import.py            # CSV/XLSX template parser & validators
+├── 📂 tests/                     # Automated quality assurance
+│   └── test_cases.py             # 18 unit tests covering all calculation logic
+├── 📄 requirements.txt           # Production dependencies
+├── 📄 install.py                 # Automated dependency installer
+└── 📄 Readme.md                  # Institutional documentation
+```
 
-### **Student Management**
-<img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/3195144f-a1c0-4513-9618-88e600023dc8" />
-<img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/8445f026-a758-4fba-a6c1-c4d224179af2" />
-
-### **Class Analytics**
-<img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/db6ce9e3-1cae-47d4-9db8-689a11d04191" />
-<img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/bba74870-aebc-4fea-b137-d10ec56647e3" />
-
-### **Visual Reports**
-<img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/82884151-a05c-4a4f-9d3f-cf3f5bde0d8d" />
-<img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/7eb677ce-8012-400d-88bd-cd8b74381585" />
+---
 
 ## 🤝 Contributing
 
-We welcome contributions to improve the Student Performance Tracker! Here's how you can help:
-
-### **Getting Started**
+Contributions are warmly welcomed! To contribute:
 
 1. **Fork the Repository**
-```bash
-git fork https://github.com/gouransh1024/Student-Performance-tracker.git
-```
+2. **Create a Feature Branch**:
+   ```bash
+   git checkout -b feature/academic-enhancement
+   ```
+3. **Commit Your Code**:
+   ```bash
+   git commit -m "feat: add semester-over-semester trend forecasting"
+   ```
+4. **Push to GitHub**:
+   ```bash
+   git push origin feature/academic-enhancement
+   ```
+5. **Open a Pull Request** for review.
 
-2. **Create a Feature Branch**
-```bash
-git checkout -b feature/amazing-feature
-```
+---
 
-3. **Make Your Changes**
-   - Follow Python PEP 8 style guidelines
-   - Add tests for new functionality
-   - Update documentation as needed
+## 👨‍💻 Author & Contact
 
-4. **Commit Your Changes**
-```bash
-git commit -m "Add amazing feature"
-```
+**Gouransh Soni**  
+*Full Stack Developer & Data Analytics Enthusiast*
 
-5. **Push to Your Branch**
-```bash
-git push origin feature/amazing-feature
-```
-
-6. **Open a Pull Request**
-
-### **Development Guidelines**
-- **Code Style**: Follow PEP 8 conventions
-- **Testing**: Add unit tests for new features
-- **Documentation**: Update README and inline docs
-- **Commits**: Use clear, descriptive commit messages
-
-### **Areas for Contribution**
-- 🔧 **New Features**: Additional analytics, reporting capabilities
-- 🐛 **Bug Fixes**: Identify and resolve issues
-- 📚 **Documentation**: Improve guides and examples
-- 🎨 **UI/UX**: Enhance user interface and experience
-- ⚡ **Performance**: Optimize database queries and rendering
-
-## 🙋♂️ Contact
-
-**Gouransh Soni** - *Full Stack Developer & Data Enthusiast*
-
-- 📧 **Email**: [gouransh1024@gmail.com](mail to:gouransh1024@gmail.com)
+- 🌐 **GitHub**: [@gouransh1024](https://github.com/gouransh1024)
+- 💼 **LinkedIn**: [Gouransh Soni](https://www.linkedin.com/in/gouransh-soni-3556192b1)
+- 📧 **Email**: [gouransh1024@gmail.com](mailto:gouransh1024@gmail.com)
 - 📱 **Phone**: [+91 9509682181](tel:+919509682181)
-- 💼 **LinkedIn**: [Gouransh SOni](https://www.linkedin.com/in/gouransh-soni-3556192b1)
-- 🔗 **GitHub**: [gouransh1024](https://github.com/gouransh1024)
-- 🌐 **Live App**: [Student Performance Tracker](https://student-performance-tracker.streamlit.app/)
-
-## 🙏 Acknowledgments
-
-- **[Streamlit Team](https://streamlit.io/)** for the amazing framework
-- **[SQLite](https://www.sqlite.org/)** for the reliable database engine
-- **[Pandas](https://pandas.pydata.org/)** for powerful data manipulation
-- **[Plotly](https://plotly.com/)** for interactive visualizations
-- **Open Source Community** for inspiration and support
-
-## 📥 Bulk Data Import Feature
-
-The application now includes a comprehensive bulk data import system that allows you to import large amounts of data from Excel and CSV files.
-
-### **Supported Import Types**
-- **Students**: Import student information (name, class, section, date of birth)
-- **Subjects**: Import subject names for the curriculum
-- **Marks**: Import student marks with assessment details
-
-### **Key Features**
-- ✅ **File Format Support**: CSV and Excel (.xlsx, .xls) files
-- ✅ **Data Validation**: Comprehensive validation with detailed error reporting
-- ✅ **Sample Templates**: Download sample files for easy data preparation
-- ✅ **Batch Processing**: Handle large datasets efficiently
-- ✅ **Import Statistics**: Track success rates and error details
-- ✅ **Error Handling**: Detailed error messages for troubleshooting
-
-### **Quick Start**
-1. Navigate to "Bulk Data Import" page
-2. Choose the data type (Students, Subjects, or Marks)
-3. Download sample files as templates
-4. Prepare your data following the format requirements
-5. Upload and validate your file
-6. Import the data and review results
-
-For detailed instructions, see the [Bulk Import Guide](BULK_IMPORT_GUIDE.md).
-
-## 🔮 Future Roadmap
-
-### **Phase 1 - Enhanced Analytics**
-- [ ] Advanced statistical analysis and predictive modeling
-- [ ] Comparative benchmarking across institutions
-- [ ] Performance trend forecasting
-
-### **Phase 2 - Extended Features**
-- [ ] PDF report generation with custom templates
-- [ ] Email notification system for parents/teachers
-- [ ] Multi-language support for international use
-- [ ] Advanced user roles and permissions system
-
-### **Phase 3 - Integration & APIs**
-- [ ] REST API development for third-party integrations
-- [ ] Mobile application development
-- [ ] Cloud storage integration
-- [ ] Real-time collaboration features
-
-## ⭐ Show Your Support
-
-If you find this project helpful, please consider:
-
-- ⭐ **Starring** the repository
-- 🐛 **Reporting** issues and bugs
-- 💡 **Suggesting** new features
-- 🤝 **Contributing** to the codebase
-- 📢 **Sharing** with others
+- 🚀 **Live Demo**: [Student Performance Tracker](https://github.com/gouransh1024/Student-Performance-tracker)
 
 ---
 
 <div align="center">
 
-**Built with ❤️ by [Gouransh Soni](https://github.com/gouransh1024)**
-
-*Empowering education through data-driven insights* 📚✨
+*Empowering educational excellence through modern data analytics.* 🎓✨
 
 </div>
-
