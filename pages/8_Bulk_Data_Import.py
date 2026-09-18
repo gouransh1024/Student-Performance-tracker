@@ -15,18 +15,22 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from models.student import Student
 from models.subject import Subject
 from models.marks import Marks
+from utils.ui_theme import inject_custom_theme, render_sidebar_header
 
 st.set_page_config(
-    page_title="Bulk Data Import",
+    page_title="Bulk Data Import | ApexTracker",
     page_icon="📥",
     layout="wide"
 )
+
+inject_custom_theme()
 
 st.title("📥 Bulk Data Import")
 st.markdown("Import student, subject, and marks data from Excel or CSV files")
 
 # Sidebar for navigation
 with st.sidebar:
+    render_sidebar_header()
     st.subheader("Import Options")
     import_type = st.radio(
         "Choose Data Type:",

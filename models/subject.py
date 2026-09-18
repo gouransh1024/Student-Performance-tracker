@@ -69,7 +69,7 @@ class Subject:
         return pd.DataFrame()
 
     @staticmethod
-    def validate_subject_data(subject_name: str) -> tuple:
+    def validate_subject_data(subject_name: str, check_duplicate: bool = True, exclude_id: int = None) -> tuple:
         """Validate subject data before insertion/update"""
         errors = []
 
@@ -80,9 +80,10 @@ class Subject:
             errors.append("Subject name cannot exceed 50 characters")
 
         # Check for duplicate subject name (case-insensitive)
-        existing_subject = Subject.get_subject_by_name(subject_name.strip())
-        if existing_subject:
-            errors.append("Subject already exists")
+        if check_duplicate and len(errors) == 0:
+            existing_subject = Subject.get_subject_by_name(subject_name.strip())
+            if existing_subject and (exclude_id is None or existing_subject[0] != exclude_id):
+                errors.append("Subject already exists")
 
         return len(errors) == 0, errors
 

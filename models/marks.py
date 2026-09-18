@@ -21,16 +21,16 @@ class Marks:
     @staticmethod
     def add_marks(student_id: int, subject_id: int, marks_obtained: int,
                   max_marks: int = 100, assessment_date: date = None,
-                  assessment_type: str = "Assignment") -> bool:
+                  assessment_type: str = "Assignment", term: str = "Term 1") -> bool:
         """Add new marks entry to database"""
         if assessment_date is None:
             assessment_date = date.today()
         
         query = """
-        INSERT INTO Marks (student_id, subject_id, marks_obtained, max_marks, assessment_date, assessment_type)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO Marks (student_id, subject_id, marks_obtained, max_marks, assessment_date, assessment_type, term)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
         """
-        return execute_query(query, (student_id, subject_id, marks_obtained, max_marks, assessment_date, assessment_type))
+        return execute_query(query, (student_id, subject_id, marks_obtained, max_marks, assessment_date, assessment_type, term))
 
     @staticmethod
     def get_all_marks() -> list:
@@ -38,6 +38,7 @@ class Marks:
         query = """
         SELECT m.mark_id, s.name, sub.subject_name, m.marks_obtained, m.max_marks,
                m.assessment_date, m.assessment_type, m.created_at,
+               COALESCE(m.term, 'Term 1') as term,
                m.student_id, m.subject_id
         FROM Marks m
         JOIN Student s ON m.student_id = s.student_id
@@ -78,21 +79,21 @@ class Marks:
 
     @staticmethod
     def update_marks(mark_id: int, marks_obtained: int, max_marks: int = 100,
-                     assessment_date: date = None, assessment_type: str = "Assignment") -> bool:
+                     assessment_date: date = None, assessment_type: str = "Assignment", term: str = "Term 1") -> bool:
         """Update existing marks entry"""
         if assessment_date is None:
             assessment_date = date.today()
         
         query = """
         UPDATE Marks
-        SET marks_obtained = ?, max_marks = ?, assessment_date = ?, assessment_type = ?
+        SET marks_obtained = ?, max_marks = ?, assessment_date = ?, assessment_type = ?, term = ?
         WHERE mark_id = ?
         """
-        return execute_query(query, (marks_obtained, max_marks, assessment_date, assessment_type, mark_id))
+        return execute_query(query, (marks_obtained, max_marks, assessment_date, assessment_type, term, mark_id))
 
     @staticmethod
     def delete_marks(mark_id: int) -> bool:
-        """Delete marks entry"""
+        """Delete marks entry from database"""
         query = "DELETE FROM Marks WHERE mark_id = ?"
         return execute_query(query, (mark_id,))
 
@@ -115,6 +116,42 @@ class Marks:
             return "F"
 
     @staticmethod
+    def calculate_gpa(percentage: float) -> float:
+        """Calculate GPA on standard 4.0 scale"""
+        if percentage >= 90:
+            return 4.0
+        elif percentage >= 80:
+            return 3.7
+        elif percentage >= 70:
+            return 3.3
+        elif percentage >= 60:
+            return 3.0
+        elif percentage >= 50:
+            return 2.3
+        elif percentage >= 40:
+            return 2.0
+        else:
+            return 0.0
+
+    @staticmethod
+    def calculate_cgpa(percentage: float) -> float:
+        """Calculate CGPA on standard 10.0 scale"""
+        if percentage >= 90:
+            return 10.0
+        elif percentage >= 80:
+            return 9.0
+        elif percentage >= 70:
+            return 8.0
+        elif percentage >= 60:
+            return 7.0
+        elif percentage >= 50:
+            return 6.0
+        elif percentage >= 40:
+            return 5.0
+        else:
+            return 0.0
+
+    @staticmethod
     def calculate_percentage(marks_obtained: int, max_marks: int) -> float:
         """Calculate percentage from marks"""
         if max_marks == 0:
@@ -122,8 +159,35 @@ class Marks:
         return round((marks_obtained / max_marks) * 100, 2)
 
     @staticmethod
+    def calculate_weighted_percentage(subject_details: list, weights: dict = None) -> float:
+        """Calculate weighted percentage based on assessment types"""
+        if not subject_details:
+            return 0.0
+        default_weights = {
+            'Final': 0.40,
+            'Midterm': 0.25,
+            'Assignment': 0.15,
+            'Quiz': 0.10,
+            'Project': 0.20,
+            'Exam': 0.40
+        }
+        w_map = weights or default_weights
+        weighted_sum = 0.0
+        weight_total = 0.0
+        for item in subject_details:
+            atype = item.get('assessment_type') or item.get('type') or 'Assignment'
+            weight = w_map.get(atype, 0.20)
+            p = item.get('percentage')
+            if p is None and 'marks_obtained' in item and 'max_marks' in item:
+                p = Marks.calculate_percentage(item['marks_obtained'], item['max_marks'])
+            p = p or 0.0
+            weighted_sum += p * weight
+            weight_total += weight
+        return round(weighted_sum / weight_total, 2) if weight_total > 0 else 0.0
+
+    @staticmethod
     def get_student_summary(student_id: int) -> dict:
-        """Get comprehensive summary for a student"""
+        """Get comprehensive summary for a student with GPA, CGPA, and weights"""
         marks_data = Marks.get_student_marks(student_id)
         
         if not marks_data:
@@ -134,6 +198,9 @@ class Marks:
                 'total_max_marks': 0,
                 'overall_percentage': 0.0,
                 'overall_grade': 'N/A',
+                'gpa': 0.0,
+                'cgpa': 0.0,
+                'weighted_percentage': 0.0,
                 'subject_details': [],
                 'pass_fail_status': 'No Data'
             }
@@ -143,6 +210,8 @@ class Marks:
         total_max = sum(mark[3] for mark in marks_data)  # max_marks
         overall_percentage = Marks.calculate_percentage(total_obtained, total_max)
         overall_grade = Marks.calculate_grade(overall_percentage)
+        gpa = Marks.calculate_gpa(overall_percentage)
+        cgpa = Marks.calculate_cgpa(overall_percentage)
 
         # Subject-wise details
         subject_details = []
@@ -163,7 +232,7 @@ class Marks:
                 'assessment_type': mark[5]
             })
 
-        # Determine pass/fail status (assuming 40% is pass threshold)
+        weighted_percentage = Marks.calculate_weighted_percentage(subject_details)
         pass_fail_status = "Pass" if overall_percentage >= 40 else "Fail"
 
         return {
@@ -173,9 +242,72 @@ class Marks:
             'total_max_marks': total_max,
             'overall_percentage': overall_percentage,
             'overall_grade': overall_grade,
+            'gpa': gpa,
+            'cgpa': cgpa,
+            'weighted_percentage': weighted_percentage,
             'subject_details': subject_details,
             'pass_fail_status': pass_fail_status
         }
+
+    @staticmethod
+    def get_at_risk_students(class_name: str = None, section: str = None) -> list:
+        """Detect students needing immediate academic intervention"""
+        from models.attendance import Attendance
+        if section and section != "All":
+            cond = "s.class = ? AND s.section = ?"
+            params = (class_name, section)
+        elif class_name and class_name != "All":
+            cond = "s.class = ?"
+            params = (class_name,)
+        else:
+            cond = "1=1"
+            params = ()
+
+        query = f"""
+        SELECT s.student_id, s.name, s.class, s.section
+        FROM Student s
+        WHERE {cond}
+        ORDER BY s.class, s.section, s.name
+        """
+        students = fetch_all(query, params)
+        at_risk = []
+        for sid, name, cls, sec in students:
+            summary = Marks.get_student_summary(sid)
+            if summary['total_subjects'] == 0:
+                continue
+            att = Attendance.get_student_attendance_summary(sid)
+            p = summary['overall_percentage']
+            failing_subjects = [sub['subject'] for sub in summary['subject_details'] if sub['percentage'] < 40]
+            
+            reasons = []
+            risk_level = "Medium"
+            if p < 40:
+                reasons.append(f"Overall failing average ({p:.1f}%)")
+                risk_level = "High"
+            if len(failing_subjects) >= 2:
+                reasons.append(f"Failing {len(failing_subjects)} subjects ({', '.join(failing_subjects[:3])})")
+                risk_level = "High"
+            elif len(failing_subjects) == 1:
+                reasons.append(f"Failing {failing_subjects[0]}")
+            if att['attendance_rate'] < 75.0:
+                reasons.append(f"Low attendance ({att['attendance_rate']:.1f}%)")
+                if risk_level != "High":
+                    risk_level = "Medium"
+
+            if reasons:
+                recommendation = "Schedule parent-teacher conference & daily remedial classes" if risk_level == "High" else "Assign subject peer tutor & review weekly homework"
+                at_risk.append({
+                    'student_id': sid,
+                    'name': name,
+                    'class': f"{cls}-{sec}",
+                    'overall_percentage': p,
+                    'overall_grade': summary['overall_grade'],
+                    'attendance_rate': att['attendance_rate'],
+                    'risk_level': risk_level,
+                    'reasons': reasons,
+                    'recommendation': recommendation
+                })
+        return at_risk
 
     @staticmethod
     def get_class_analytics(class_name: str, section: str = None) -> dict:
@@ -294,17 +426,28 @@ def display_marks_table(marks_data: list, show_calculations: bool = True) -> Non
     # Prepare data for display
     display_data = []
     for mark in marks_data:
-        percentage = Marks.calculate_percentage(mark[3], mark[4])
+        if len(mark) >= 7:
+            student_name = mark[1]
+            subject_name = mark[2]
+            marks_obtained = mark[3]
+            max_marks = mark[4]
+            date_val = mark[5]
+            type_val = mark[6]
+        else:
+            continue
+
+        percentage = Marks.calculate_percentage(marks_obtained, max_marks)
         grade = Marks.calculate_grade(percentage)
         
+        date_str = date_val.strftime('%Y-%m-%d') if isinstance(date_val, (date, datetime)) else str(date_val)
         display_data.append([
-            mark[1],  # Student/Subject name
-            mark[2] if len(mark) > 8 else mark[1],  # Subject/Student name
-            f"{mark[3]}/{mark[4]}",  # Marks
-            f"{percentage}%",  # Percentage
-            grade,  # Grade
-            mark[5].strftime('%Y-%m-%d') if isinstance(mark[5], date) else mark[5],  # Date
-            mark[6]  # Assessment type
+            student_name,
+            subject_name,
+            f"{marks_obtained}/{max_marks}",
+            f"{percentage}%",
+            grade,
+            date_str,
+            type_val
         ])
 
     df = pd.DataFrame(display_data, columns=[

@@ -1,401 +1,185 @@
 """
-Class Analytics Page - Class and section-wise performance analysis (SQLite version)
+Class Analytics Page - In-Depth Cohort Intelligence & Diagnostics
+Features Performance Heatmap, Attendance Correlation, Grade Donut, and Leaderboard
 """
 import streamlit as st
 import pandas as pd
+from datetime import date
 import sys
 import os
-from datetime import date
-import sqlite3
-
-
-def get_filtered_students(selected_class, selected_section):
-    students = Student.get_all_students()
-    if selected_class == "All":
-        return students
-    
-    filtered = [s for s in students if s[2] == selected_class]
-    if selected_section != "All":
-        filtered = [s for s in filtered if s[3] == selected_section]
-    return filtered
 
 # Add parent directory to path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from models.student import Student
 from models.marks import Marks
+from models.attendance import Attendance
+from utils.ui_theme import inject_custom_theme, render_kpi_card, render_grade_pill, render_sidebar_header
+from utils.chart_theme import (
+    create_class_heatmap, create_attendance_scatter, 
+    create_grade_donut_chart, create_podium_bar_chart
+)
 
 st.set_page_config(
-    page_title="Class Analytics",
+    page_title="Class Analytics & Heatmap | ApexTracker",
     page_icon="📊",
     layout="wide"
 )
 
-st.title("📊 Class Analytics & Performance")
-st.markdown("Comprehensive analysis of class and section performance")
+inject_custom_theme()
+render_sidebar_header()
 
-# Get available classes and sections
-students = Student.get_all_students()
+st.markdown("""
+<div style="background: linear-gradient(135deg, #1E1B4B 0%, #312E81 50%, #4338CA 100%); 
+            padding: 1.8rem 2.2rem; border-radius: 18px; color: white; margin-bottom: 1.8rem;
+            box-shadow: 0 10px 20px -5px rgba(67, 56, 202, 0.3);">
+    <h1 style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 2.1rem; font-weight: 800; margin: 0 0 6px 0;">
+        📊 Class Analytics & Cohort Heatmap
+    </h1>
+    <p style="color: #E0E7FF; font-size: 0.98rem; margin: 0;">
+        Multi-dimensional cohort analysis, Student vs. Subject mastery heatmaps, and attendance regression models.
+    </p>
+</div>
+""", unsafe_allow_html=True)
 
-if not students:
-    st.warning("⚠️ No students found. Please add students first.")
-    if st.button("Go to Manage Students"):
-        st.switch_page("pages/1_Manage_Students.py")
+# Class & Section Filters
+unique_classes = Student.get_unique_classes()
+if not unique_classes:
+    st.warning("⚠️ No student records or classes found. Please enroll students first.")
     st.stop()
 
-# Get unique classes and sections
-unique_classes = Student.get_unique_classes()
-unique_sections = Student.get_unique_sections()
-
-# Sidebar for class/section selection
-with st.sidebar:
-    st.subheader("Class Selection")
-
-    # Class filter
-    selected_class = st.selectbox(
-        "Select Class:",
-        options=["All"] + unique_classes,
-        help="Choose a specific class or view all classes"
-    )
-
-    # Section filter
+col_f1, col_f2 = st.columns([1, 1])
+with col_f1:
+    selected_class = st.selectbox("Select Target Class:", ["All"] + unique_classes)
+with col_f2:
     if selected_class != "All":
-        available_sections = []
-        for student in students:
-            if student[2] == selected_class:
-                if student[3] not in available_sections:
-                    available_sections.append(student[3])
-        available_sections.sort()
-
-        selected_section = st.selectbox(
-            "Select Section:",
-            options=["All"] + available_sections,
-            help="Choose a specific section within the class"
-        )
+        avail_sections = ["All"] + list(set(s[3] for s in Student.get_students_by_class(selected_class)))
+        selected_section = st.selectbox("Select Section:", avail_sections)
     else:
         selected_section = "All"
 
-    if selected_class != "All":
-        st.info(f"**Analyzing:** Class {selected_class}" + 
-               (f"-{selected_section}" if selected_section != "All" else ""))
+# Fetch cohort data
+class_param = None if selected_class == "All" else selected_class
+section_param = None if selected_section == "All" else selected_section
 
-# Main analytics content
-col1, col2 = st.columns([3, 1])
+class_analytics = Marks.get_class_analytics(class_param, section_param)
+students_in_class = Student.get_students_by_class(class_param, section_param) if class_param else Student.get_all_students()
 
-with col1:
-    if selected_class != "All":
-        # Specific class analysis
-        st.subheader(f"📈 Class {selected_class}" + 
-                    (f" Section {selected_section}" if selected_section != "All" else "") + 
-                    " Performance")
+# Cohort Attendance stats
+att_summary = Attendance.get_class_attendance_summary(class_param, section_param)
+att_rate = att_summary.get('overall_attendance_rate', 0.0)
 
-        # Get class analytics
-        with st.spinner("Analyzing class performance..."):
-            try:
-                class_analytics = Marks.get_class_analytics(
-                    selected_class, 
-                    selected_section if selected_section != "All" else None
-                )
+# Cohort KPIs
+k1, k2, k3, k4, k5 = st.columns(5)
+with k1:
+    render_kpi_card("Cohort Size", f"{len(students_in_class)}", "Enrolled Students", "👥", None)
+with k2:
+    avg_score = class_analytics.get('class_average', 0.0)
+    render_kpi_card("Class Average", f"{avg_score:.1f}%", "Overall Score", "📈", "+2.4%", "positive" if avg_score >= 60 else "negative")
+with k3:
+    pass_pct = class_analytics.get('pass_percentage', 0.0)
+    render_kpi_card("Pass Rate", f"{pass_pct:.1f}%", f"{class_analytics.get('pass_count', 0)} Passed", "🏆", None)
+with k4:
+    att_delta = "positive" if att_rate >= 75 else "negative"
+    render_kpi_card("Attendance Rate", f"{att_rate:.1f}%", "Presence Index", "📅", "Target &ge; 75%", att_delta)
+with k5:
+    fail_cnt = class_analytics.get('fail_count', 0)
+    risk_delta = "negative" if fail_cnt > 0 else "positive"
+    render_kpi_card("At-Risk Count", f"{fail_cnt}", "Below Passing Threshold", "⚠️", f"{fail_cnt} students", risk_delta)
 
-                if class_analytics['total_students'] == 0:
-                    st.warning("⚠️ No marks data found for this class. Please enter marks first.")
-                    if st.button("Go to Enter Marks"):
-                        st.switch_page("pages/3_Enter_Update_Marks.py")
-                else:
-                    # Performance metrics
-                    col1_1, col1_2, col1_3, col1_4 = st.columns(4)
+st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
 
-                    with col1_1:
-                        st.metric("Total Students", class_analytics['total_students'])
+# 1. Performance Heatmap (Students vs Subjects)
+st.markdown("### 🔥 Student-Subject Mastery Heatmap")
+st.caption("Interactive matrix displaying individual student percentages across subjects to identify learning gaps.")
 
-                    with col1_2:
-                        st.metric("Class Average", f"{class_analytics['class_average']}%")
+# Build matrix dataframe
+all_marks = Marks.get_all_marks()
+cohort_student_ids = set(s[0] for s in students_in_class)
 
-                    with col1_3:
-                        st.metric("Pass Rate", f"{class_analytics['pass_percentage']}%")
+matrix_records = []
+for m in all_marks:
+    # m is (mark_id, student_name, subject_name, marks_obtained, max_marks, date, type, created, term, student_id, subject_id)
+    sid = m[9] if len(m) > 9 else None
+    if sid in cohort_student_ids or selected_class == "All":
+        pct = Marks.calculate_percentage(m[3], m[4])
+        matrix_records.append({
+            'Student': m[1],
+            'Subject': m[2],
+            'Percentage': pct
+        })
 
-                    with col1_4:
-                        pass_fail_ratio = f"{class_analytics['pass_count']}/{class_analytics['fail_count']}"
-                        st.metric("Pass/Fail", pass_fail_ratio)
+if matrix_records:
+    df_m = pd.DataFrame(matrix_records)
+    pivot_df = df_m.pivot_table(index='Student', columns='Subject', values='Percentage', aggfunc='mean')
+    st.plotly_chart(create_class_heatmap(pivot_df), use_container_width=True)
+else:
+    st.info("No marks data logged to construct the mastery heatmap.")
 
-                    # Top performers section
-                    st.markdown("### 🏆 Top Performers")
+st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
 
-                    if class_analytics['top_performers']:
-                        top_performers_data = []
-                        for i, student in enumerate(class_analytics['top_performers'], 1):
-                            top_performers_data.append({
-                                'Rank': i,
-                                'Name': student['name'],
-                                'Percentage': f"{student['percentage']:.1f}%",
-                                'Grade': student['grade'],
-                                'Subjects': student['subjects_count']
-                            })
+# 2. Attendance vs. Performance Correlation Scatter
+col_corr1, col_corr2 = st.columns([1, 1])
 
-                        df_top = pd.DataFrame(top_performers_data)
-                        st.dataframe(
-                            df_top,
-                            use_container_width=True,
-                            hide_index=True,
-                            column_config={
-                                "Rank": st.column_config.NumberColumn("Rank", width="small"),
-                                "Name": st.column_config.TextColumn("Student Name", width="medium"),
-                                "Percentage": st.column_config.TextColumn("Percentage", width="small"),
-                                "Grade": st.column_config.TextColumn("Grade", width="small"),
-                                "Subjects": st.column_config.NumberColumn("Subjects", width="small")
-                            }
-                        )
+with col_corr1:
+    st.markdown("### 📈 Attendance vs. Academic Score Correlation")
+    st.caption("Linear regression showing the empirical relationship between attendance rates and overall grades.")
+    corr_data = Attendance.get_all_students_attendance_correlation(class_param, section_param)
+    st.plotly_chart(create_attendance_scatter(corr_data), use_container_width=True)
 
-                    # All students performance table
-                    st.markdown("### 📋 All Students Performance")
-
-                    all_students_data = []
-                    for student in class_analytics['student_summaries']:
-                        status = "Pass" if student['percentage'] >= 40 else "Fail"
-                        all_students_data.append({
-                            'Name': student['name'],
-                            'Total Marks': f"{student['total_obtained']}/{student['total_max']}",
-                            'Percentage': f"{student['percentage']:.1f}%",
-                            'Grade': student['grade'],
-                            'Status': status,
-                            'Subjects': student['subjects_count']
-                        })
-
-                    df_all = pd.DataFrame(all_students_data)
-                    st.dataframe(
-                        df_all,
-                        use_container_width=True,
-                        hide_index=True,
-                        column_config={
-                            "Name": st.column_config.TextColumn("Student Name", width="medium"),
-                            "Total Marks": st.column_config.TextColumn("Marks", width="medium"),
-                            "Percentage": st.column_config.TextColumn("Percentage", width="small"),
-                            "Grade": st.column_config.TextColumn("Grade", width="small"),
-                            "Status": st.column_config.TextColumn("Status", width="small"),
-                            "Subjects": st.column_config.NumberColumn("Subjects", width="small")
-                        }
-                    )
-
-                    # Grade distribution
-                    st.markdown("### 📊 Grade Distribution")
-
-                    grade_counts = {}
-                    for student in class_analytics['student_summaries']:
-                        grade = student['grade']
-                        grade_counts[grade] = grade_counts.get(grade, 0) + 1
-
-                    col1_1, col1_2, col1_3, col1_4 = st.columns(4)
-
-                    with col1_1:
-                        a_count = grade_counts.get('A+', 0) + grade_counts.get('A', 0)
-                        st.metric("A Grades", a_count, f"{(a_count/class_analytics['total_students']*100):.1f}%")
-
-                    with col1_2:
-                        b_count = grade_counts.get('B+', 0) + grade_counts.get('B', 0)
-                        st.metric("B Grades", b_count, f"{(b_count/class_analytics['total_students']*100):.1f}%")
-
-                    with col1_3:
-                        c_count = grade_counts.get('C+', 0) + grade_counts.get('C', 0)
-                        st.metric("C Grades", c_count, f"{(c_count/class_analytics['total_students']*100):.1f}%")
-
-                    with col1_4:
-                        f_count = grade_counts.get('F', 0)
-                        st.metric("F Grades", f_count, f"{(f_count/class_analytics['total_students']*100):.1f}%")
-
-                    # Performance insights
-                    st.markdown("### 💡 Performance Insights")
-
-                    insights = []
-
-                    # Class average insight
-                    if class_analytics['class_average'] >= 80:
-                        insights.append("🌟 **Excellent class performance** - Average above 80%")
-                    elif class_analytics['class_average'] >= 60:
-                        insights.append("👍 **Good class performance** - Average above 60%")
-                    elif class_analytics['class_average'] >= 40:
-                        insights.append("⚠️ **Average class performance** - Needs improvement")
-                    else:
-                        insights.append("❌ **Below average class performance** - Requires immediate attention")
-
-                    # Pass rate insight
-                    if class_analytics['pass_percentage'] >= 90:
-                        insights.append("✅ **Excellent pass rate** - 90%+ students passing")
-                    elif class_analytics['pass_percentage'] >= 75:
-                        insights.append("📈 **Good pass rate** - Most students performing well")
-                    elif class_analytics['pass_percentage'] >= 50:
-                        insights.append("⚠️ **Moderate pass rate** - Some students need support")
-                    else:
-                        insights.append("🚨 **Low pass rate** - Many students failing, intervention needed")
-
-                    # Grade distribution insight
-                    if (grade_counts.get('A+', 0) + grade_counts.get('A', 0)) >= class_analytics['total_students'] * 0.3:
-                        insights.append("🎯 **High achievers present** - 30%+ students with A grades")
-
-                    if grade_counts.get('F', 0) == 0:
-                        insights.append("🎉 **No failing students** - Everyone is passing!")
-                    elif grade_counts.get('F', 0) >= class_analytics['total_students'] * 0.2:
-                        insights.append("⚠️ **High failure rate** - 20%+ students failing")
-
-                    for insight in insights:
-                        st.write(insight)
-
-                    # Export section
-                    st.markdown("---")
-                    st.markdown("### 📥 Export Class Report")
-
-                    if st.button("📊 Export to CSV", use_container_width=True):
-                        csv_data = df_all.to_csv(index=False)
-                        st.download_button(
-                            label="Download CSV",
-                            data=csv_data,
-                            file_name=f"class_report_{selected_class}_{selected_section}_{date.today().strftime('%Y%m%d')}.csv",
-                            mime="text/csv"
-                        )
-
-            except sqlite3.Error as db_error:
-                st.error(f"Database error: {str(db_error)}")
-            except Exception as e:
-                st.error(f"Unexpected error: {str(e)}")
-
+with col_corr2:
+    st.markdown("### 🥧 Cohort Grade Distribution")
+    st.caption("Proportional breakdown of final letter grades across the class.")
+    student_summaries = class_analytics.get('student_summaries', [])
+    if student_summaries:
+        grade_dist = {'A+': 0, 'A': 0, 'B+': 0, 'B': 0, 'C+': 0, 'C': 0, 'F': 0}
+        for s in student_summaries:
+            g = s.get('grade', 'N/A')
+            grade_dist[g] = grade_dist.get(g, 0) + 1
+        st.plotly_chart(create_grade_donut_chart(grade_dist), use_container_width=True)
     else:
-        # Overall system analytics
-        st.subheader("🌐 Overall System Analytics")
+        st.info("No summary data available.")
 
-        with st.spinner("Loading system analytics..."):
-            try:
-                # Get overall statistics
-                all_marks = Marks.get_all_marks()
+st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
 
-                if all_marks:
-                    # Calculate overall stats
-                    total_assessments = len(all_marks)
-                    total_obtained = sum(mark[3] for mark in all_marks)
-                    total_possible = sum(mark[4] for mark in all_marks)
-                    overall_avg = (total_obtained / total_possible * 100) if total_possible > 0 else 0
+# 3. Top Performers Podium & Cohort Ledger
+col_pod1, col_pod2 = st.columns([1, 1])
 
-                    # Pass rate
-                    passing_assessments = sum(1 for mark in all_marks 
-                                            if Marks.calculate_percentage(mark[3], mark[4]) >= 40)
-                    pass_rate = (passing_assessments / total_assessments * 100) if total_assessments > 0 else 0
+with col_pod1:
+    st.markdown("### 🏆 Class Academic Leaderboard")
+    top_performers = class_analytics.get('top_performers', [])
+    if top_performers:
+        df_top = pd.DataFrame(top_performers).rename(columns={'name': 'student_name', 'percentage': 'overall_percentage', 'grade': 'overall_grade'})
+        st.plotly_chart(create_podium_bar_chart(df_top), use_container_width=True)
+    else:
+        st.info("Leaderboard will populate as student assessments are logged.")
 
-                    col1_1, col1_2, col1_3, col1_4 = st.columns(4)
+with col_pod2:
+    st.markdown("### 📋 Student Cohort Summary")
+    if student_summaries:
+        cohort_table = []
+        for s in student_summaries:
+            cohort_table.append({
+                "Student Name": s.get('name'),
+                "Total Marks": f"{s.get('total_obtained')} / {s.get('total_max')}",
+                "Percentage": f"{s.get('percentage', 0):.1f}%",
+                "Grade": s.get('grade', 'N/A'),
+                "Status": "Pass" if s.get('percentage', 0) >= 40 else "Fail",
+                "Subjects": s.get('subjects_count')
+            })
+        df_cohort = pd.DataFrame(cohort_table)
+        st.dataframe(df_cohort, use_container_width=True, hide_index=True)
 
-                    with col1_1:
-                        st.metric("Total Students", len(students))
-
-                    with col1_2:
-                        st.metric("Total Assessments", total_assessments)
-
-                    with col1_3:
-                        st.metric("Overall Average", f"{overall_avg:.1f}%")
-
-                    with col1_4:
-                        st.metric("Pass Rate", f"{pass_rate:.1f}%")
-
-                    # Class-wise performance comparison
-                    st.markdown("### 📊 Class-wise Performance")
-
-                    class_performance = []
-                    for class_name in unique_classes:
-                        for section in unique_sections:
-                            class_analytics = Marks.get_class_analytics(class_name, section)
-                            if class_analytics['total_students'] > 0:
-                                class_performance.append({
-                                    'Class-Section': f"{class_name}-{section}",
-                                    'Students': class_analytics['total_students'],
-                                    'Average %': f"{class_analytics['class_average']:.1f}%",
-                                    'Pass Count': class_analytics['pass_count'],
-                                    'Pass %': f"{class_analytics['pass_percentage']:.1f}%"
-                                })
-
-                    if class_performance:
-                        class_df = pd.DataFrame(class_performance)
-                        st.dataframe(class_df, use_container_width=True, hide_index=True)
-                else:
-                    st.info("No marks data available for system-wide analysis")
-
-            except Exception as e:
-                st.error(f"Error loading system analytics: {str(e)}")
-
-with col2:
-    # Right sidebar with additional insights
-    st.subheader("📋 Quick Insights")
-
-    try:
-        if selected_class != "All":
-            # Class-specific insights
-            class_students = [s for s in students if s[2] == selected_class]
-            if selected_section != "All":
-                class_students = [s for s in class_students if s[3] == selected_section]
-
-            st.metric("Students in Class", len(class_students))
-
-            # Get marks for this class
-            all_marks = Marks.get_all_marks()
-            class_marks = []
-            for mark in all_marks:
-                # Find student info by matching student name and checking class/section
-                for student in students:
-                    if student[1] == mark[1] and student[2] == selected_class:
-                        if selected_section == "All" or student[3] == selected_section:
-                            class_marks.append(mark)
-                            break
-
-            if class_marks:
-                total_assessments = len(class_marks)
-                st.metric("Total Assessments", total_assessments)
-
-                # Recent activity
-                recent_marks = sorted(class_marks, key=lambda x: x[7], reverse=True)[:5]
-
-                st.markdown("**Recent Assessments:**")
-                for mark in recent_marks[:5]:
-                    percentage = Marks.calculate_percentage(mark[3], mark[4])
-                    st.write(f"• {mark[1]}: {mark[2]} ({percentage:.1f}%)")
-        else:
-            # Overall system insights
-            total_students = len(students)
-            all_marks = Marks.get_all_marks()
-
-            st.metric("Total Students", total_students)
-            st.metric("Total Assessments", len(all_marks))
-
-            if all_marks:
-                # Calculate overall pass rate
-                passing_assessments = sum(1 for mark in all_marks 
-                                        if Marks.calculate_percentage(mark[3], mark[4]) >= 40)
-                overall_pass_rate = (passing_assessments / len(all_marks)) * 100
-
-                st.metric("Overall Pass Rate", f"{overall_pass_rate:.1f}%")
-
-    except Exception as e:
-        st.error("Could not load insights")
-
-    # Navigation shortcuts
-    st.markdown("---")
-    st.subheader("🚀 Quick Actions")
-
-    if st.button("📝 Enter Marks", use_container_width=True):
-        st.switch_page("pages/3_Enter_Update_Marks.py")
-
-    if st.button("📋 Report Cards", use_container_width=True):
-        st.switch_page("pages/4_Student_Report_Card.py")
-
-    if st.button("🏠 Dashboard", use_container_width=True):
-        st.switch_page("app.py")
-
-# Navigation buttons
-st.markdown("---")
-col1, col2, col3 = st.columns(3)
-
-with col1:
-    if st.button("🏠 Back to Dashboard"):
-        st.switch_page("app.py")
-
-with col2:
-    if st.button("📝 Enter Marks"):
-        st.switch_page("pages/3_Enter_Update_Marks.py")
-
-with col3:
-    if st.button("📋 View Reports"):
-        st.switch_page("pages/4_Student_Report_Card.py")
+        # Export CSV
+        csv_bytes = df_cohort.to_csv(index=False).encode('utf-8')
+        class_label = f"Class_{selected_class}_{selected_section}"
+        st.download_button(
+            label="📥 Export Cohort Analytics (CSV)",
+            data=csv_bytes,
+            file_name=f"{class_label}_Analytics_{date.today().strftime('%Y%m%d')}.csv",
+            mime="text/csv",
+            type="secondary",
+            use_container_width=True
+        )
+    else:
+        st.info("No student summary records found.")

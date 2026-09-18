@@ -1,5 +1,6 @@
 """
-Manage Students Page - CRUD operations for students (SQLite version)
+Manage Students & Attendance - Comprehensive Student Directory
+Enhanced with Roll Numbers, Emails, Avatars, and Quick Attendance Logging
 """
 import streamlit as st
 import pandas as pd
@@ -10,242 +11,227 @@ import os
 # Add parent directory to path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from models.student import Student, display_students_table, student_form
+from models.student import Student
+from models.attendance import Attendance
+from utils.ui_theme import inject_custom_theme, get_student_avatar_svg, render_kpi_card, render_sidebar_header
 
 st.set_page_config(
-    page_title="Manage Students",
+    page_title="Manage Students & Attendance | ApexTracker",
     page_icon="👥",
     layout="wide"
 )
 
-st.title("👥 Manage Students")
-st.markdown("Add, edit, view, and manage student records")
+# Apply global styling
+inject_custom_theme()
+render_sidebar_header()
 
-# Sidebar for navigation
-with st.sidebar:
-    st.subheader("Student Management")
-    action = st.radio(
-        "Choose Action:",
-        ["View All Students", "Add New Student", "Search Students", "Edit Student", "Delete Student"],
-        key="student_action"
+# Header Banner
+st.markdown("""
+<div style="background: linear-gradient(135deg, #1E1B4B 0%, #3730A3 100%); 
+            padding: 1.8rem 2.2rem; border-radius: 18px; color: white; margin-bottom: 1.8rem;
+            box-shadow: 0 10px 20px -5px rgba(55, 48, 163, 0.3);">
+    <h1 style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 2.1rem; font-weight: 800; margin: 0 0 6px 0;">
+        👥 Student Directory & Attendance Management
+    </h1>
+    <p style="color: #C7D2FE; font-size: 0.98rem; margin: 0;">
+        Manage student biographical records, assign roll numbers and emails, and record daily cohort attendance.
+    </p>
+</div>
+""", unsafe_allow_html=True)
+
+# Navigation tabs
+tab_view, tab_add, tab_att, tab_edit, tab_delete = st.tabs([
+    "📋 Student Directory", 
+    "➕ Enroll New Student", 
+    "📅 Quick Attendance Logger", 
+    "✏️ Edit Records", 
+    "🗑️ Delete Student"
+])
+
+# 1. Student Directory Tab
+with tab_view:
+    col_f1, col_f2, col_f3 = st.columns([2, 1, 1])
+    with col_f1:
+        search_query = st.text_input("🔍 Search by Name, Roll No, or Email:", placeholder="Type to filter...")
+    with col_f2:
+        classes = ["All"] + Student.get_unique_classes()
+        filter_class = st.selectbox("Class Filter:", classes)
+    with col_f3:
+        sections = ["All"] + Student.get_unique_sections()
+        filter_section = st.selectbox("Section Filter:", sections)
+
+    students_raw = Student.search_students(
+        search_term=search_query,
+        class_filter="" if filter_class == "All" else filter_class,
+        section_filter="" if filter_section == "All" else filter_section
     )
 
-# Main content area
-if action == "View All Students":
-    st.subheader("📋 All Students")
+    if students_raw:
+        st.success(f"Found {len(students_raw)} enrolled student(s)")
+        
+        df = pd.DataFrame(students_raw, columns=['ID', 'Name', 'Class', 'Section', 'DOB', 'Roll No', 'Email', 'Enrolled On'])
+        df['DOB'] = pd.to_datetime(df['DOB']).dt.strftime('%Y-%m-%d')
+        df['Enrolled On'] = pd.to_datetime(df['Enrolled On']).dt.strftime('%Y-%m-%d')
 
-    # Load students data
-    with st.spinner("Loading students..."):
-        try:
-            students_data = Student.get_all_students()
+        st.dataframe(
+            df[['ID', 'Roll No', 'Name', 'Class', 'Section', 'DOB', 'Email', 'Enrolled On']],
+            use_container_width=True,
+            hide_index=True,
+            column_config={
+                "ID": st.column_config.NumberColumn("ID", width="small"),
+                "Roll No": st.column_config.TextColumn("Roll No", width="small"),
+                "Name": st.column_config.TextColumn("Full Name", width="medium"),
+                "Class": st.column_config.TextColumn("Class", width="small"),
+                "Section": st.column_config.TextColumn("Sec", width="small"),
+                "DOB": st.column_config.TextColumn("DOB", width="medium"),
+                "Email": st.column_config.TextColumn("Email Address", width="medium"),
+                "Enrolled On": st.column_config.TextColumn("Enrolled", width="small")
+            }
+        )
 
-            if students_data:
-                st.success(f"Found {len(students_data)} students")
-                display_students_table(students_data)
+        # CSV Export
+        csv_bytes = df.to_csv(index=False).encode('utf-8')
+        st.download_button(
+            label="📥 Export Filtered Students (CSV)",
+            data=csv_bytes,
+            file_name=f"students_export_{date.today().strftime('%Y%m%d')}.csv",
+            mime="text/csv",
+            type="secondary"
+        )
+    else:
+        st.info("No students found matching your criteria.")
 
-                # Export option
-                with st.expander("📥 Export Students"):
-                    if st.button("Export to CSV"):
-                        df = pd.DataFrame(students_data, columns=['ID', 'Name', 'Class', 'Section', 'DOB', 'Created'])
-                        csv = df.to_csv(index=False)
-                        st.download_button(
-                            label="Download CSV",
-                            data=csv,
-                            file_name=f"students_export_{date.today().strftime('%Y%m%d')}.csv",
-                            mime="text/csv"
+# 2. Add Student Tab
+with tab_add:
+    st.subheader("➕ Enroll New Student")
+    with st.form("add_student_form"):
+        c1, c2 = st.columns(2)
+        with c1:
+            new_name = st.text_input("Full Name *", placeholder="e.g. Liam Smith")
+            new_class = st.text_input("Class / Grade *", placeholder="e.g. 10")
+            new_roll = st.text_input("Roll Number (Optional)", placeholder="e.g. 10A-11 (Leave empty to auto-assign)")
+        with c2:
+            new_section = st.text_input("Section *", placeholder="e.g. A")
+            new_dob = st.date_input("Date of Birth *", value=date.today().replace(year=date.today().year - 15), max_value=date.today())
+            new_email = st.text_input("Student / Parent Email (Optional)", placeholder="e.g. student@school.edu")
+
+        submit_add = st.form_submit_button("Enroll Student", type="primary", use_container_width=True)
+        if submit_add:
+            is_valid, errors = Student.validate_student_data(new_name, new_class, new_section, new_dob, new_roll, new_email)
+            if is_valid:
+                success = Student.add_student(new_name, new_class, new_section, new_dob, new_roll, new_email)
+                if success:
+                    st.success(f"✅ Successfully enrolled {new_name} in Class {new_class}-{new_section}!")
+                    st.rerun()
+                else:
+                    st.error("Failed to enroll student into database.")
+            else:
+                for err in errors:
+                    st.error(f"❌ {err}")
+
+# 3. Quick Attendance Logger Tab
+with tab_att:
+    st.subheader("📅 Class Attendance Logger")
+    st.caption("Record daily attendance for an entire classroom with one click.")
+
+    all_classes = Student.get_unique_classes()
+    if not all_classes:
+        st.warning("Please add students and classes first.")
+    else:
+        att_c1, att_c2, att_c3 = st.columns([1, 1, 1])
+        with att_c1:
+            selected_att_class = st.selectbox("Select Class:", all_classes, key="att_class_sel")
+        with att_c2:
+            sections_for_class = ["All"] + list(set(s[3] for s in Student.get_students_by_class(selected_att_class)))
+            selected_att_sec = st.selectbox("Select Section:", sections_for_class, key="att_sec_sel")
+        with att_c3:
+            att_date = st.date_input("Attendance Date:", value=date.today(), max_value=date.today(), key="att_date_sel")
+
+        sec_filter = None if selected_att_sec == "All" else selected_att_sec
+        class_students = Student.get_students_by_class(selected_att_class, sec_filter)
+
+        if not class_students:
+            st.info(f"No students found in Class {selected_att_class} (Section {selected_att_sec})")
+        else:
+            st.markdown(f"**Marking Attendance for {len(class_students)} Students on {att_date.strftime('%B %d, %Y')}:**")
+
+            with st.form("batch_attendance_form"):
+                attendance_inputs = {}
+                cols = st.columns(2)
+                for idx, st_item in enumerate(class_students):
+                    sid, sname, scls, ssec, sroll = st_item[0], st_item[1], st_item[2], st_item[3], st_item[4]
+                    roll_label = f"[{sroll}] " if sroll else ""
+                    with cols[idx % 2]:
+                        attendance_inputs[sid] = st.radio(
+                            f"{roll_label}{sname} ({scls}-{ssec})",
+                            options=["Present", "Absent", "Late", "Excused"],
+                            horizontal=True,
+                            key=f"att_radio_{sid}_{att_date}"
                         )
 
-            else:
-                st.info("No students found. Add some students to get started!")
+                save_att = st.form_submit_button("💾 Submit Daily Attendance", type="primary", use_container_width=True)
+                if save_att:
+                    saved_count = 0
+                    for sid, status in attendance_inputs.items():
+                        if Attendance.mark_attendance(sid, att_date, status):
+                            saved_count += 1
+                    st.success(f"✅ Successfully logged attendance for {saved_count} / {len(class_students)} students on {att_date}!")
 
-        except Exception as e:
-            st.error(f"Error loading students: {str(e)}")
+# 4. Edit Student Tab
+with tab_edit:
+    st.subheader("✏️ Edit Student Profile")
+    all_sts = Student.get_all_students()
+    if all_sts:
+        st_lookup = {f"{s[1]} (Roll: {s[5] or s[0]} | Class {s[2]}-{s[3]})": s[0] for s in all_sts}
+        chosen_key = st.selectbox("Choose Student to Edit:", list(st_lookup.keys()), key="edit_picker")
+        chosen_id = st_lookup[chosen_key]
+        curr_data = Student.get_student_by_id(chosen_id)
 
-elif action == "Add New Student":
-    st.subheader("➕ Add New Student")
+        if curr_data:
+            with st.form("edit_student_form"):
+                ec1, ec2 = st.columns(2)
+                with ec1:
+                    edit_name = st.text_input("Full Name *", value=curr_data[1])
+                    edit_class = st.text_input("Class *", value=curr_data[2])
+                    edit_roll = st.text_input("Roll Number", value=curr_data[5] or "")
+                with ec2:
+                    edit_sec = st.text_input("Section *", value=curr_data[3])
+                    curr_dob = pd.to_datetime(curr_data[4]).date() if curr_data[4] else date.today()
+                    edit_dob = st.date_input("Date of Birth *", value=curr_dob, max_value=date.today())
+                    edit_email = st.text_input("Email", value=curr_data[6] or "")
 
-    # Student form for adding
-    student_form(form_type="Add")
+                save_edit = st.form_submit_button("Save Changes", type="primary", use_container_width=True)
+                if save_edit:
+                    valid, errs = Student.validate_student_data(edit_name, edit_class, edit_sec, edit_dob, edit_roll, edit_email)
+                    if valid:
+                        if Student.update_student(chosen_id, edit_name, edit_class, edit_sec, edit_dob, edit_roll, edit_email):
+                            st.success(f"✅ Updated details for {edit_name}!")
+                            st.rerun()
+                        else:
+                            st.error("Failed to update record.")
+                    else:
+                        for err in errs:
+                            st.error(f"❌ {err}")
+    else:
+        st.info("No students enrolled yet.")
 
-    # Display recent additions
-    with st.expander("Recent Student Additions"):
-        try:
-            recent_students = Student.get_all_students()[-5:]  # Last 5 students
-            if recent_students:
-                for student in recent_students:
-                    st.write(f"• {student[1]} (Class {student[2]}-{student[3]})")
-            else:
-                st.info("No recent additions")
-        except Exception as e:
-            st.warning("Could not load recent additions")
-
-elif action == "Search Students":
-    st.subheader("🔍 Search Students")
-
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        search_term = st.text_input("Search by name:", placeholder="Enter student name...")
-
-    with col2:
-        class_filter = st.selectbox("Filter by Class:", options=["All", "10", "11", "12"])
-
-    with col3:
-        section_filter = st.selectbox("Filter by Section:", options=["All", "A", "B", "C"])
-
-    if st.button("🔍 Search") or search_term:
-        with st.spinner("Searching students..."):
-            try:
-                search_results = Student.search_students(
-                    search_term=search_term,
-                    class_filter=class_filter if class_filter != "All" else "",
-                    section_filter=section_filter if section_filter != "All" else ""
-                )
-
-                if search_results:
-                    st.success(f"Found {len(search_results)} students matching your criteria")
-                    display_students_table(search_results)
-                else:
-                    st.warning("No students found matching your search criteria")
-
-            except Exception as e:
-                st.error(f"Search error: {str(e)}")
-
-elif action == "Edit Student":
-    st.subheader("✏️ Edit Student")
-
-    # Select student to edit
-    try:
-        students = Student.get_all_students()
-        if students:
-            # Create selectbox with student options
-            student_options = {f"{student[1]} (ID: {student[0]} - {student[2]}-{student[3]})": student[0] 
-                             for student in students}
-
-            selected_student_key = st.selectbox(
-                "Select student to edit:",
-                options=list(student_options.keys()),
-                key="edit_student_select"
-            )
-
-            if selected_student_key:
-                selected_student_id = student_options[selected_student_key]
-
-                # Get student data
-                student_data = Student.get_student_by_id(selected_student_id)
-
-                if student_data:
-                    st.info(f"Editing: {student_data[1]}")
-
-                    # Display current information
-                    with st.expander("Current Information"):
-                        col1, col2 = st.columns(2)
-                        with col1:
-                            st.write(f"**Name:** {student_data[1]}")
-                            st.write(f"**Class:** {student_data[2]}")
-                        with col2:
-                            st.write(f"**Section:** {student_data[3]}")
-                            st.write(f"**DOB:** {student_data[4]}")
-
-                    # Edit form
-                    student_form(student_data=student_data, form_type="Update")
-
-                else:
-                    st.error("Could not load student data")
-        else:
-            st.info("No students available for editing")
-
-    except Exception as e:
-        st.error(f"Error loading students for editing: {str(e)}")
-
-elif action == "Delete Student":
+# 5. Delete Student Tab
+with tab_delete:
     st.subheader("🗑️ Delete Student")
+    st.warning("⚠️ Deleting a student permanently removes all their biographical details, marks, and attendance logs.")
+    all_sts_del = Student.get_all_students()
+    if all_sts_del:
+        del_lookup = {f"{s[1]} (Roll: {s[5] or s[0]} | Class {s[2]}-{s[3]})": s[0] for s in all_sts_del}
+        del_key = st.selectbox("Select Student to Remove:", list(del_lookup.keys()), key="del_picker")
+        del_id = del_lookup[del_key]
 
-    st.warning("⚠️ **Warning**: Deleting a student will also remove all their marks and cannot be undone!")
-
-    try:
-        students = Student.get_all_students()
-        if students:
-            # Create selectbox with student options
-            student_options = {f"{student[1]} (ID: {student[0]} - {student[2]}-{student[3]})": student[0] 
-                             for student in students}
-
-            selected_student_key = st.selectbox(
-                "Select student to delete:",
-                options=list(student_options.keys()),
-                key="delete_student_select"
-            )
-
-            if selected_student_key:
-                selected_student_id = student_options[selected_student_key]
-                student_data = Student.get_student_by_id(selected_student_id)
-
-                if student_data:
-                    # Display student info
-                    st.error(f"**Student to be deleted:** {student_data[1]} (Class {student_data[2]}-{student_data[3]})")
-
-                    # Confirmation
-                    if st.checkbox(f"I confirm I want to delete {student_data[1]}"):
-                        if st.button("🗑️ Delete Student", type="primary"):
-                            if Student.delete_student(selected_student_id):
-                                st.success(f"✅ Student {student_data[1]} deleted successfully!")
-                                st.rerun()
-                            else:
-                                st.error("❌ Failed to delete student")
-        else:
-            st.info("No students available for deletion")
-
-    except Exception as e:
-        st.error(f"Error loading students for deletion: {str(e)}")
-
-# Statistics sidebar
-with st.sidebar:
-    st.markdown("---")
-    st.subheader("📊 Student Statistics")
-
-    try:
-        all_students = Student.get_all_students()
-        student_count = len(all_students) if all_students else 0
-
-        # Basic stats
-        st.metric("Total Students", student_count)
-
-        if all_students:
-            # Class distribution
-            class_counts = {}
-            for student in all_students:
-                class_name = student[2]
-                class_counts[class_name] = class_counts.get(class_name, 0) + 1
-
-            st.write("**Students by Class:**")
-            for class_name, count in sorted(class_counts.items()):
-                st.write(f"• Class {class_name}: {count}")
-
-            # Section distribution
-            section_counts = {}
-            for student in all_students:
-                section_name = student[3]
-                section_counts[section_name] = section_counts.get(section_name, 0) + 1
-
-            st.write("**Students by Section:**")
-            for section_name, count in sorted(section_counts.items()):
-                st.write(f"• Section {section_name}: {count}")
-
-    except Exception as e:
-        st.error("Could not load statistics")
-
-# Navigation buttons
-st.markdown("---")
-col1, col2, col3 = st.columns(3)
-
-with col1:
-    if st.button("🏠 Back to Dashboard"):
-        st.switch_page("app.py")
-
-with col2:
-    if st.button("📚 Manage Subjects"):
-        st.switch_page("pages/2_Manage_Subjects.py")
-
-with col3:
-    if st.button("📝 Enter Marks"):
-        st.switch_page("pages/3_Enter_Update_Marks.py")
+        confirm_del = st.checkbox(f"I understand this action is irreversible and permanently removes this record.")
+        if confirm_del:
+            if st.button("🚨 Permanently Delete Student", type="primary"):
+                if Student.delete_student(del_id):
+                    st.success("✅ Student and associated academic history deleted.")
+                    st.rerun()
+                else:
+                    st.error("Failed to delete student.")
+    else:
+        st.info("No students available.")

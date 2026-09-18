@@ -1,5 +1,5 @@
 """
-Enter/Update Marks Page - Marks entry and management (SQLite version)
+Enter & Update Marks Page - Assessment Management with Academic Terms
 """
 import streamlit as st
 import pandas as pd
@@ -13,426 +13,220 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from models.student import Student
 from models.subject import Subject
 from models.marks import Marks, display_marks_table
+from utils.ui_theme import inject_custom_theme, render_grade_pill, render_sidebar_header
 
 st.set_page_config(
-    page_title="Enter Marks",
+    page_title="Marks & Grading Engine | ApexTracker",
     page_icon="📝",
     layout="wide"
 )
 
-st.title("📝 Enter & Update Marks")
-st.markdown("Record student assessments and track academic performance")
+inject_custom_theme()
+render_sidebar_header()
 
-# Sidebar for navigation
-with st.sidebar:
-    st.subheader("Marks Management")
-    action = st.radio(
-        "Choose Action:",
-        ["Enter New Marks", "View All Marks", "Update Marks", "Delete Marks"],
-        key="marks_action"
-    )
+st.markdown("""
+<div style="background: linear-gradient(135deg, #1E1B4B 0%, #4338CA 100%); 
+            padding: 1.8rem 2.2rem; border-radius: 18px; color: white; margin-bottom: 1.8rem;
+            box-shadow: 0 10px 20px -5px rgba(67, 56, 202, 0.3);">
+    <h1 style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 2.1rem; font-weight: 800; margin: 0 0 6px 0;">
+        📝 Assessment Marks & Grading Engine
+    </h1>
+    <p style="color: #E0E7FF; font-size: 0.98rem; margin: 0;">
+        Record examination scores, assignments, quizzes, and track academic progression across terms.
+    </p>
+</div>
+""", unsafe_allow_html=True)
 
-# Helper functions
-def get_student_options():
-    """Get formatted student options for selectbox"""
+tab_entry, tab_view, tab_edit, tab_delete = st.tabs([
+    "➕ Record New Assessment",
+    "📋 Assessment Ledger",
+    "✏️ Modify Entry",
+    "🗑️ Remove Entry"
+])
+
+# Helpers
+def get_student_map():
     students = Student.get_all_students()
-    if students:
-        return {f"{student[1]} - {student[2]}-{student[3]} (ID: {student[0]})": student[0] 
-                for student in students}
-    return {}
+    return {f"{s[1]} (Roll: {s[5] or s[0]} | Class {s[2]}-{s[3]})": s[0] for s in students} if students else {}
 
-def get_subject_options():
-    """Get formatted subject options for selectbox"""
+def get_subject_map():
     subjects = Subject.get_all_subjects()
-    if subjects:
-        return {f"{subject[1]} (ID: {subject[0]})": subject[0] 
-                for subject in subjects}
-    return {}
+    return {f"{s[1]} (ID: {s[0]})": s[0] for s in subjects} if subjects else {}
 
-# Main content area
-if action == "Enter New Marks":
-    st.subheader("➕ Enter New Marks")
+# 1. Record New Assessment
+with tab_entry:
+    student_map = get_student_map()
+    subject_map = get_subject_map()
 
-    # Check if students and subjects exist
-    students = Student.get_all_students()
-    subjects = Subject.get_all_subjects()
-
-    if not students:
-        st.warning("⚠️ No students found. Please add students first.")
-        if st.button("Go to Manage Students"):
-            st.switch_page("pages/1_Manage_Students.py")
-    elif not subjects:
-        st.warning("⚠️ No subjects found. Please add subjects first.")
-        if st.button("Go to Manage Subjects"):
-            st.switch_page("pages/2_Manage_Subjects.py")
+    if not student_map or not subject_map:
+        st.warning("⚠️ Both students and subjects must be created before logging marks.")
     else:
-        # Marks entry form
-        with st.form("marks_entry_form"):
+        with st.form("enter_marks_form"):
             col1, col2 = st.columns(2)
-
             with col1:
-                # Student selection
-                student_options = get_student_options()
-                selected_student_key = st.selectbox(
-                    "Select Student *",
-                    options=list(student_options.keys()),
-                    help="Choose the student for marks entry"
-                )
-                student_id = student_options.get(selected_student_key)
+                selected_st_key = st.selectbox("Select Student *", list(student_map.keys()))
+                student_id = student_map[selected_st_key]
 
-                # Subject selection
-                subject_options = get_subject_options()
-                selected_subject_key = st.selectbox(
-                    "Select Subject *",
-                    options=list(subject_options.keys()),
-                    help="Choose the subject for assessment"
+                selected_sub_key = st.selectbox("Select Subject *", list(subject_map.keys()))
+                subject_id = subject_map[selected_sub_key]
+
+                term_choice = st.selectbox(
+                    "Academic Term *",
+                    ["Term 1", "Term 2", "Midterm Examination", "Finals", "Summer Session"],
+                    index=0
                 )
-                subject_id = subject_options.get(selected_subject_key)
 
             with col2:
-                # Marks input
-                col2a, col2b = st.columns(2)
-                with col2a:
-                    marks_obtained = st.number_input(
-                        "Marks Obtained *",
-                        min_value=0,
-                        max_value=1000,
-                        value=0,
-                        help="Enter the marks scored by student"
-                    )
-                with col2b:
-                    max_marks = st.number_input(
-                        "Maximum Marks *",
-                        min_value=1,
-                        max_value=1000,
-                        value=100,
-                        help="Enter the maximum possible marks"
-                    )
+                c2a, c2b = st.columns(2)
+                with c2a:
+                    obtained = st.number_input("Marks Obtained *", min_value=0, max_value=1000, value=75)
+                with c2b:
+                    max_score = st.number_input("Maximum Marks *", min_value=1, max_value=1000, value=100)
 
-                # Assessment details
-                assessment_date = st.date_input(
-                    "Assessment Date *",
-                    value=date.today(),
-                    max_value=date.today(),
-                    help="Date when assessment was conducted"
-                )
+                assess_date = st.date_input("Assessment Date *", value=date.today(), max_value=date.today())
+                assess_type = st.selectbox("Assessment Type *", ["Assignment", "Quiz", "Midterm", "Final", "Project", "Practical"])
 
-                assessment_type = st.selectbox(
-                    "Assessment Type *",
-                    options=["Assignment", "Quiz", "Midterm", "Final"],
-                    help="Type of assessment"
-                )
+            submit_marks = st.form_submit_button("Record Assessment", type="primary", use_container_width=True)
 
-            # Submit button
-            submitted = st.form_submit_button("Add Marks", type="primary")
-
-            if submitted:
-                # Validate input
-                is_valid, errors = Marks.validate_marks_data(marks_obtained, max_marks, assessment_date)
-
-                if is_valid and student_id and subject_id:
-                    # Add marks to database
+            if submit_marks:
+                valid, errors = Marks.validate_marks_data(obtained, max_score, assess_date)
+                if valid:
                     success = Marks.add_marks(
-                        student_id, subject_id, marks_obtained, max_marks, 
-                        assessment_date, assessment_type
+                        student_id=student_id,
+                        subject_id=subject_id,
+                        marks_obtained=obtained,
+                        max_marks=max_score,
+                        assessment_date=assess_date,
+                        assessment_type=assess_type,
+                        term=term_choice
                     )
-
                     if success:
-                        percentage = Marks.calculate_percentage(marks_obtained, max_marks)
-                        grade = Marks.calculate_grade(percentage)
-
-                        st.success(f"""
-                        ✅ **Marks added successfully!**
-
-                        - Student: {selected_student_key.split(' - ')[0]}
-                        - Subject: {selected_subject_key.split(' (')[0]}
-                        - Marks: {marks_obtained}/{max_marks} ({percentage}%)
-                        - Grade: {grade}
-                        - Assessment: {assessment_type} on {assessment_date}
-                        """)
+                        pct = Marks.calculate_percentage(obtained, max_score)
+                        grd = Marks.calculate_grade(pct)
+                        st.success(f"✅ Recorded marks for {selected_st_key.split(' (')[0]} - {selected_sub_key.split(' (')[0]}: {obtained}/{max_score} ({pct:.1f}% • Grade {grd}) [{term_choice}]")
                     else:
-                        st.error("❌ Failed to add marks. Please try again.")
+                        st.error("Failed to insert marks record into database.")
                 else:
-                    # Display validation errors
-                    for error in errors:
-                        st.error(f"❌ {error}")
+                    for e in errors:
+                        st.error(f"❌ {e}")
 
-elif action == "View All Marks":
-    st.subheader("📋 All Marks")
+# 2. View All Marks
+with tab_view:
+    all_records = Marks.get_all_marks()
+    if all_records:
+        fc1, fc2, fc3, fc4 = st.columns(4)
+        with fc1:
+            st_filter = st.selectbox("Student:", ["All"] + sorted(list(set(m[1] for m in all_records))))
+        with fc2:
+            sub_filter = st.selectbox("Subject:", ["All"] + sorted(list(set(m[2] for m in all_records))))
+        with fc3:
+            type_filter = st.selectbox("Assessment:", ["All"] + sorted(list(set(m[6] for m in all_records))))
+        with fc4:
+            term_filter = st.selectbox("Term:", ["All"] + sorted(list(set(m[8] for m in all_records if len(m) > 8 and m[8]))))
 
-    # Load marks data
-    with st.spinner("Loading marks..."):
-        try:
-            marks_data = Marks.get_all_marks()
+        filtered = all_records
+        if st_filter != "All":
+            filtered = [m for m in filtered if m[1] == st_filter]
+        if sub_filter != "All":
+            filtered = [m for m in filtered if m[2] == sub_filter]
+        if type_filter != "All":
+            filtered = [m for m in filtered if m[6] == type_filter]
+        if term_filter != "All":
+            filtered = [m for m in filtered if len(m) > 8 and m[8] == term_filter]
 
-            if marks_data:
-                # Filters
-                col1, col2, col3 = st.columns(3)
-                with col1:
-                    # Student filter
-                    student_names = ["All"] + list(set([mark[1] for mark in marks_data]))
-                    selected_student = st.selectbox("Filter by Student:", student_names)
+        st.success(f"Displaying {len(filtered)} assessment record(s)")
+        display_marks_table(filtered)
 
-                with col2:
-                    # Subject filter
-                    subject_names = ["All"] + list(set([mark[2] for mark in marks_data]))
-                    selected_subject = st.selectbox("Filter by Subject:", subject_names)
+        # Export CSV
+        df_export = pd.DataFrame([
+            {
+                "Mark ID": m[0],
+                "Student": m[1],
+                "Subject": m[2],
+                "Marks Obtained": m[3],
+                "Max Marks": m[4],
+                "Percentage": f"{Marks.calculate_percentage(m[3], m[4]):.1f}%",
+                "Grade": Marks.calculate_grade(Marks.calculate_percentage(m[3], m[4])),
+                "Date": m[5],
+                "Type": m[6],
+                "Term": m[8] if len(m) > 8 else "Term 1"
+            }
+            for m in filtered
+        ])
 
-                with col3:
-                    # Assessment type filter
-                    assessment_types = ["All"] + list(set([mark[6] for mark in marks_data]))
-                    selected_type = st.selectbox("Filter by Type:", assessment_types)
+        csv_bytes = df_export.to_csv(index=False).encode('utf-8')
+        st.download_button(
+            label="📥 Download Assessment Ledger (CSV)",
+            data=csv_bytes,
+            file_name=f"marks_ledger_{date.today().strftime('%Y%m%d')}.csv",
+            mime="text/csv",
+            type="secondary"
+        )
+    else:
+        st.info("No assessment records found.")
 
-                # Apply filters
-                filtered_data = marks_data
-                if selected_student != "All":
-                    filtered_data = [mark for mark in filtered_data if mark[1] == selected_student]
-                if selected_subject != "All":
-                    filtered_data = [mark for mark in filtered_data if mark[2] == selected_subject]
-                if selected_type != "All":
-                    filtered_data = [mark for mark in filtered_data if mark[6] == selected_type]
+# 3. Update Marks
+with tab_edit:
+    all_mk = Marks.get_all_marks()
+    if all_mk:
+        mk_lookup = {
+            f"{m[1]} - {m[2]} ({m[3]}/{m[4]}) [{m[6]}] - {m[5]}": m[0]
+            for m in all_mk
+        }
+        chosen_mk_key = st.selectbox("Choose Entry to Modify:", list(mk_lookup.keys()))
+        chosen_mk_id = mk_lookup[chosen_mk_key]
+        mk_data = next((m for m in all_mk if m[0] == chosen_mk_id), None)
 
-                if filtered_data:
-                    st.success(f"Showing {len(filtered_data)} records")
-                    display_marks_table(filtered_data)
+        if mk_data:
+            with st.form("edit_mark_entry_form"):
+                ec1, ec2 = st.columns(2)
+                with ec1:
+                    new_ob = st.number_input("Marks Obtained *", min_value=0, max_value=1000, value=mk_data[3])
+                    new_max = st.number_input("Maximum Marks *", min_value=1, max_value=1000, value=mk_data[4])
+                with ec2:
+                    curr_date = pd.to_datetime(mk_data[5]).date() if mk_data[5] else date.today()
+                    new_date = st.date_input("Assessment Date *", value=curr_date, max_value=date.today())
+                    types = ["Assignment", "Quiz", "Midterm", "Final", "Project", "Practical"]
+                    curr_type_idx = types.index(mk_data[6]) if mk_data[6] in types else 0
+                    new_type = st.selectbox("Assessment Type *", types, index=curr_type_idx)
 
-                    # Export option
-                    with st.expander("📥 Export Marks"):
-                        if st.button("Export to CSV"):
-                            df = pd.DataFrame(filtered_data, columns=[
-                                'Mark ID', 'Student', 'Subject', 'Marks Obtained', 'Max Marks',
-                                'Assessment Date', 'Assessment Type', 'Created', 'Student ID', 'Subject ID'
-                            ])
-                            csv = df.to_csv(index=False)
-                            st.download_button(
-                                label="Download CSV",
-                                data=csv,
-                                file_name="marks_export.csv",
-                                mime="text/csv"
-                            )
+                term_val = mk_data[8] if len(mk_data) > 8 and mk_data[8] else "Term 1"
+                term_choices = ["Term 1", "Term 2", "Midterm Examination", "Finals", "Summer Session"]
+                term_idx = term_choices.index(term_val) if term_val in term_choices else 0
+                new_term = st.selectbox("Term *", term_choices, index=term_idx)
+
+                save_update = st.form_submit_button("Save Changes", type="primary", use_container_width=True)
+                if save_update:
+                    valid, errs = Marks.validate_marks_data(new_ob, new_max, new_date)
+                    if valid:
+                        if Marks.update_marks(chosen_mk_id, new_ob, new_max, new_date, new_type, new_term):
+                            st.success("✅ Assessment record updated successfully!")
+                            st.rerun()
+                        else:
+                            st.error("Failed to update marks in database.")
+                    else:
+                        for e in errs:
+                            st.error(f"❌ {e}")
+    else:
+        st.info("No records to modify.")
+
+# 4. Delete Marks
+with tab_delete:
+    all_mk_del = Marks.get_all_marks()
+    if all_mk_del:
+        del_lookup = {
+            f"{m[1]} - {m[2]} ({m[3]}/{m[4]}) [{m[6]}] - {m[5]}": m[0]
+            for m in all_mk_del
+        }
+        del_key = st.selectbox("Select Entry to Delete:", list(del_lookup.keys()), key="del_mk_select")
+        del_id = del_lookup[del_key]
+
+        if st.checkbox(f"Confirm deletion of {del_key}"):
+            if st.button("🚨 Delete Entry", type="primary"):
+                if Marks.delete_marks(del_id):
+                    st.success("✅ Assessment record deleted.")
+                    st.rerun()
                 else:
-                    st.warning("No marks found matching the selected filters")
-
-            else:
-                st.info("No marks found. Enter some marks to get started!")
-
-        except Exception as e:
-            st.error(f"Error loading marks: {str(e)}")
-
-elif action == "Update Marks":
-    st.subheader("✏️ Update Marks")
-
-    # Load marks for selection
-    try:
-        all_marks = Marks.get_all_marks()
-
-        if all_marks:
-            # Create options for marks selection
-            marks_options = {}
-            for mark in all_marks:
-                key = f"{mark[1]} - {mark[2]} ({mark[3]}/{mark[4]}) - {mark[5]}"
-                marks_options[key] = mark[0]  # mark_id
-
-            selected_mark_key = st.selectbox(
-                "Select marks entry to update:",
-                options=list(marks_options.keys()),
-                help="Choose the marks entry you want to modify"
-            )
-
-            if selected_mark_key:
-                mark_id = marks_options[selected_mark_key]
-
-                # Find the selected mark data
-                selected_mark_data = next((mark for mark in all_marks if mark[0] == mark_id), None)
-
-                if selected_mark_data:
-                    # Display current information
-                    with st.expander("Current Information"):
-                        col1, col2 = st.columns(2)
-                        with col1:
-                            st.write(f"**Student:** {selected_mark_data[1]}")
-                            st.write(f"**Subject:** {selected_mark_data[2]}")
-                            st.write(f"**Current Marks:** {selected_mark_data[3]}/{selected_mark_data[4]}")
-                        with col2:
-                            current_percentage = Marks.calculate_percentage(selected_mark_data[3], selected_mark_data[4])
-                            current_grade = Marks.calculate_grade(current_percentage)
-                            st.write(f"**Percentage:** {current_percentage}%")
-                            st.write(f"**Grade:** {current_grade}")
-                            st.write(f"**Assessment Type:** {selected_mark_data[6]}")
-
-                    # Update form
-                    with st.form("update_marks_form"):
-                        col1, col2 = st.columns(2)
-
-                        with col1:
-                            new_marks_obtained = st.number_input(
-                                "New Marks Obtained *",
-                                min_value=0,
-                                max_value=1000,
-                                value=selected_mark_data[3],
-                                help="Enter the updated marks"
-                            )
-
-                            new_max_marks = st.number_input(
-                                "New Maximum Marks *",
-                                min_value=1,
-                                max_value=1000,
-                                value=selected_mark_data[4],
-                                help="Enter the updated maximum marks"
-                            )
-
-                        with col2:
-                            new_assessment_date = st.date_input(
-                                "Assessment Date *",
-                                value=selected_mark_data[5],
-                                max_value=date.today()
-                            )
-
-                            new_assessment_type = st.selectbox(
-                                "Assessment Type *",
-                                options=["Assignment", "Quiz", "Midterm", "Final"],
-                                index=["Assignment", "Quiz", "Midterm", "Final"].index(selected_mark_data[6])
-                            )
-
-                        # Submit button
-                        update_submitted = st.form_submit_button("Update Marks", type="primary")
-
-                        if update_submitted:
-                            # Validate input
-                            is_valid, errors = Marks.validate_marks_data(new_marks_obtained, new_max_marks, new_assessment_date)
-
-                            if is_valid:
-                                # Update marks in database
-                                success = Marks.update_marks(
-                                    mark_id, new_marks_obtained, new_max_marks,
-                                    new_assessment_date, new_assessment_type
-                                )
-
-                                if success:
-                                    new_percentage = Marks.calculate_percentage(new_marks_obtained, new_max_marks)
-                                    new_grade = Marks.calculate_grade(new_percentage)
-
-                                    st.success(f"""
-                                    ✅ **Marks updated successfully!**
-
-                                    - Student: {selected_mark_data[1]}
-                                    - Subject: {selected_mark_data[2]}
-                                    - Updated Marks: {new_marks_obtained}/{new_max_marks} ({new_percentage}%)
-                                    - New Grade: {new_grade}
-                                    """)
-                                else:
-                                    st.error("❌ Failed to update marks. Please try again.")
-                            else:
-                                # Display validation errors
-                                for error in errors:
-                                    st.error(f"❌ {error}")
-        else:
-            st.info("No marks available for update")
-
-    except Exception as e:
-        st.error(f"Error loading marks for update: {str(e)}")
-
-elif action == "Delete Marks":
-    st.subheader("🗑️ Delete Marks")
-    st.warning("⚠️ **Warning**: Deleting marks cannot be undone!")
-
-    # Load marks for deletion
-    try:
-        all_marks = Marks.get_all_marks()
-
-        if all_marks:
-            # Create options for marks selection
-            marks_options = {}
-            for mark in all_marks:
-                key = f"{mark[1]} - {mark[2]} ({mark[3]}/{mark[4]}) - {mark[5]} [{mark[6]}]"
-                marks_options[key] = mark[0]  # mark_id
-
-            selected_mark_key = st.selectbox(
-                "Select marks entry to delete:",
-                options=list(marks_options.keys()),
-                help="Choose the marks entry to remove permanently"
-            )
-
-            if selected_mark_key:
-                mark_id = marks_options[selected_mark_key]
-                selected_mark_data = next((mark for mark in all_marks if mark[0] == mark_id), None)
-
-                if selected_mark_data:
-                    # Display mark details
-                    st.error(f"""
-                    **Entry to be deleted:**
-                    - Student: {selected_mark_data[1]}
-                    - Subject: {selected_mark_data[2]}
-                    - Marks: {selected_mark_data[3]}/{selected_mark_data[4]}
-                    - Date: {selected_mark_data[5]}
-                    - Type: {selected_mark_data[6]}
-                    """)
-
-                    # Confirmation
-                    if st.checkbox("I confirm I want to delete this marks entry"):
-                        if st.button("🗑️ Delete Marks Entry", type="primary"):
-                            if Marks.delete_marks(mark_id):
-                                st.success("✅ Marks entry deleted successfully!")
-                                st.rerun()
-                            else:
-                                st.error("❌ Failed to delete marks entry")
-        else:
-            st.info("No marks available for deletion")
-
-    except Exception as e:
-        st.error(f"Error loading marks for deletion: {str(e)}")
-
-# Statistics sidebar
-with st.sidebar:
-    st.markdown("---")
-    st.subheader("📊 Marks Statistics")
-
-    try:
-        all_marks = Marks.get_all_marks()
-        if all_marks:
-            total_marks = len(all_marks)
-            st.metric("Total Entries", total_marks)
-
-            # Calculate some basic statistics
-            total_obtained = sum(mark[3] for mark in all_marks)
-            total_possible = sum(mark[4] for mark in all_marks)
-            overall_percentage = (total_obtained / total_possible * 100) if total_possible > 0 else 0
-
-            st.metric("Overall Average", f"{overall_percentage:.1f}%")
-
-            # Grade distribution
-            grades = []
-            for mark in all_marks:
-                percentage = Marks.calculate_percentage(mark[3], mark[4])
-                grade = Marks.calculate_grade(percentage)
-                grades.append(grade)
-
-            grade_counts = {}
-            for grade in grades:
-                grade_counts[grade] = grade_counts.get(grade, 0) + 1
-
-            st.write("**Grade Distribution:**")
-            for grade in ['A+', 'A', 'B+', 'B', 'C+', 'C', 'F']:
-                if grade in grade_counts:
-                    st.write(f"• {grade}: {grade_counts[grade]}")
-        else:
-            st.info("No marks data available")
-
-    except Exception as e:
-        st.error("Could not load statistics")
-
-# Navigation buttons
-st.markdown("---")
-col1, col2, col3 = st.columns(3)
-
-with col1:
-    if st.button("🏠 Back to Dashboard"):
-        st.switch_page("app.py")
-
-with col2:
-    if st.button("👥 Manage Students"):
-        st.switch_page("pages/1_Manage_Students.py")
-
-with col3:
-    if st.button("📋 View Reports"):
-        st.switch_page("pages/4_Student_Report_Card.py")
+                    st.error("Failed to delete.")
+    else:
+        st.info("No records available.")

@@ -10,6 +10,12 @@ from datetime import date
 # Add current directory to path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
+if sys.platform == "win32" and hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 from utils.data_import import (
     create_sample_students_file,
     create_sample_subjects_file,
@@ -182,4 +188,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
