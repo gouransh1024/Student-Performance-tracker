@@ -103,7 +103,12 @@ def display_teacher_dashboard():
         # Calculate attendance cohort rate
         correlation_data = Attendance.get_all_students_attendance_correlation()
         if correlation_data:
-            valid_att = [d['attendance_pct'] for d in correlation_data if d['attendance_pct'] is not None]
+            valid_att = [
+                d.get('attendance_pct', d.get('attendance_rate'))
+                for d in correlation_data 
+                if d.get('attendance_pct') is not None or d.get('attendance_rate') is not None
+            ]
+            valid_att = [float(x) for x in valid_att if x is not None]
             avg_attendance = sum(valid_att) / len(valid_att) if valid_att else 0.0
         else:
             avg_attendance = 0.0
@@ -157,8 +162,8 @@ def display_teacher_dashboard():
                     "Class": f"{s['class']}-{s['section']}",
                     "Score %": f"{s['overall_percentage']:.1f}%",
                     "Grade": s['overall_grade'],
-                    "Attendance %": f"{s['attendance_rate']:.1f}%",
-                    "Primary Concerns": ", ".join(s['risk_factors'])
+                    "Attendance %": f"{s.get('attendance_rate', s.get('attendance_pct', 0.0)):.1f}%",
+                    "Primary Concerns": ", ".join(s.get('risk_factors', s.get('reasons', [])))
                 })
             st.dataframe(pd.DataFrame(risk_rows), use_container_width=True, hide_index=True)
             st.caption("💡 Recommended Action: Schedule faculty advising sessions or initiate targeted remedial tutoring.")

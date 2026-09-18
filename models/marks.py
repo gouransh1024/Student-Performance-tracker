@@ -296,15 +296,17 @@ class Marks:
 
             if reasons:
                 recommendation = "Schedule parent-teacher conference & daily remedial classes" if risk_level == "High" else "Assign subject peer tutor & review weekly homework"
+                at_rate = att.get('attendance_rate', 100.0) if isinstance(att, dict) else 100.0
                 at_risk.append({
                     'student_id': sid,
                     'name': name,
                     'class': f"{cls}-{sec}",
                     'overall_percentage': p,
                     'overall_grade': summary['overall_grade'],
-                    'attendance_rate': att['attendance_rate'],
+                    'attendance_rate': at_rate,
                     'risk_level': risk_level,
                     'reasons': reasons,
+                    'risk_factors': reasons,
                     'recommendation': recommendation
                 })
         return at_risk

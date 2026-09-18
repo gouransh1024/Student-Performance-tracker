@@ -310,6 +310,22 @@ class TestAttendanceModel(BaseTestCase):
         self.assertIn('overall_attendance_rate', summary)
         self.assertGreaterEqual(summary['overall_attendance_rate'], 0.0)
 
+    def test_attendance_correlation_and_scatter(self):
+        """Test attendance correlation data format and scatter chart generation"""
+        from models.attendance import Attendance
+        from utils.chart_theme import create_attendance_scatter
+        corr = Attendance.get_all_students_attendance_correlation("10", "Z")
+        self.assertIsInstance(corr, list)
+        if corr:
+            item = corr[0]
+            self.assertIn('attendance_pct', item)
+            self.assertIn('attendance_rate', item)
+            self.assertIn('academic_avg', item)
+            self.assertIn('student_name', item)
+            self.assertIn('status', item)
+        fig = create_attendance_scatter(corr)
+        self.assertIsNotNone(fig)
+
 
 class TestPdfAndZipExport(BaseTestCase):
     """Test suite for single PDF report card and batch class ZIP generation"""

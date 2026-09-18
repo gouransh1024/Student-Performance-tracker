@@ -113,26 +113,44 @@ class Attendance:
         }
 
     @staticmethod
-    def get_all_students_attendance_correlation() -> List[Dict]:
+    def get_all_students_attendance_correlation(class_name: Optional[str] = None, section: Optional[str] = None) -> List[Dict]:
         """Fetch attendance vs academic percentage data for correlation plotting"""
-        query = """
+        conditions = []
+        params = []
+        if class_name and class_name != "All":
+            conditions.append("s.class = ?")
+            params.append(class_name)
+        if section and section != "All":
+            conditions.append("s.section = ?")
+            params.append(section)
+        
+        where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+        
+        query = f"""
         SELECT s.student_id, s.name, s.class, s.section,
                AVG((m.marks_obtained * 100.0) / m.max_marks) as avg_score
         FROM Student s
         JOIN Marks m ON s.student_id = m.student_id
+        {where_clause}
         GROUP BY s.student_id, s.name, s.class, s.section
         """
-        student_rows = fetch_all(query)
+        student_rows = fetch_all(query, tuple(params) if params else None)
         data = []
         for s in student_rows:
             sid, name, cls, sec, score = s[0], s[1], s[2], s[3], s[4]
             att = Attendance.get_student_attendance_summary(sid)
+            rate = att.get('attendance_rate', 100.0)
+            avg_score = round(score, 1) if score is not None else 0.0
             data.append({
                 'student_id': sid,
                 'name': name,
+                'student_name': name,
                 'class': f"{cls}-{sec}",
-                'attendance_rate': att['attendance_rate'],
-                'academic_percentage': round(score, 1) if score else 0.0
+                'attendance_rate': rate,
+                'attendance_pct': rate,
+                'academic_percentage': avg_score,
+                'academic_avg': avg_score,
+                'status': 'Pass' if avg_score >= 40 else 'Fail'
             })
         return data
 
