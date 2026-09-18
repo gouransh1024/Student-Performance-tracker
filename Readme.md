@@ -7,14 +7,22 @@
 [![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B.svg?style=for-the-badge&logo=Streamlit&logoColor=white)](https://streamlit.io/)
 [![SQLite](https://img.shields.io/badge/SQLite-003B57.svg?style=for-the-badge&logo=sqlite&logoColor=white)](https://www.sqlite.org/)
 [![Plotly](https://img.shields.io/badge/Plotly-3F4F75.svg?style=for-the-badge&logo=plotly&logoColor=white)](https://plotly.com/)
-[![Tests](https://img.shields.io/badge/Tests-18%2F18%20Passing-22C55E.svg?style=for-the-badge&logo=checkmarx&logoColor=white)](tests/test_cases.py)
+[![Tests](https://img.shields.io/badge/Tests-19%2F19%20Passing-22C55E.svg?style=for-the-badge&logo=checkmarx&logoColor=white)](tests/test_cases.py)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 
 A robust, modern, and comprehensive academic performance management system engineered with **Streamlit**, **SQLite**, and **Plotly**. Features real-time institutional analytics, dual grading scales (4.0 GPA & 10.0 UGC/CBSE), attendance correlation engines, ReportLab PDF report cards, and a dual-theme UI engine with high-contrast accessibility.
 
-[🌐 Explore Application](https://github.com/gouransh1024/Student-Performance-tracker) • [📖 Documentation](#-table-of-contents) • [⚡ Quick Start](#-quick-start) • [🧪 Run Tests](#-test-suite)
+[🚀 **Launch Live Application**](https://student-performance-tracker-fn7euyfqjuzyksjzbowvvt.streamlit.app/) • [💻 GitHub Repository](https://github.com/gouransh1024/Student-Performance-tracker) • [📖 Documentation](#-table-of-contents) • [⚡ Quick Start](#-quick-start) • [🧪 Run Tests](#-test-suite)
 
 </div>
+
+---
+
+## 🚀 Live Demo
+
+Experience the full enterprise application live on Streamlit Cloud:
+
+👉 **[https://student-performance-tracker-fn7euyfqjuzyksjzbowvvt.streamlit.app/](https://student-performance-tracker-fn7euyfqjuzyksjzbowvvt.streamlit.app/)**
 
 ---
 
@@ -313,7 +321,7 @@ Contributions are warmly welcomed! To contribute:
 - 💼 **LinkedIn**: [Gouransh Soni](https://www.linkedin.com/in/gouransh-soni-3556192b1)
 - 📧 **Email**: [gouransh1024@gmail.com](mailto:gouransh1024@gmail.com)
 - 📱 **Phone**: [+91 9509682181](tel:+919509682181)
-- 🚀 **Live Demo**: [Student Performance Tracker](https://github.com/gouransh1024/Student-Performance-tracker)
+- 🚀 **Live Demo**: [ApexTracker Cloud Application](https://student-performance-tracker-fn7euyfqjuzyksjzbowvvt.streamlit.app/)
 
 ---
 
